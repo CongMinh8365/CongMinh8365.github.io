@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Personal CTF writeups and notes.">
+    <title>CTF Write-ups</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+  </head>
+  <body data-page="home">
+    <div class="site-shell">
+      <header class="topbar" aria-label="Primary navigation">
+        <a class="brand-mark" href="index.html" aria-label="Home">CTF</a>
+        <nav class="nav-links" aria-label="Site">
+          <a href="index.html" aria-current="page">Posts</a>
+          <a class="owner-only" href="editor.html">Editor</a>
+          <a class="owner-only" href="guide.html">Guide</a>
+          <a href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+      </header>
+
+      <main class="home-layout">
+        <section class="hero-block" aria-labelledby="site-title">
+          <p class="terminal-kicker">~/writeups</p>
+          <h1 id="site-title">CTF Write-ups</h1>
+          <p class="hero-copy">Reverse, Web, Crypto, Forensics, Pwn, Misc.</p>
+          <div class="hero-actions owner-only">
+            <a class="button primary" href="editor.html">New writeup</a>
+          </div>
+        </section>
+
+        <section id="posts" class="posts-workspace" aria-labelledby="posts-title">
+          <div class="section-head">
+            <div>
+              <p class="terminal-kicker">published</p>
+              <h2 id="posts-title">Posts</h2>
+            </div>
+            <label class="search-box">
+              <span class="sr-only">Search posts</span>
+              <input id="post-search" type="search" placeholder="search writeups">
+            </label>
+          </div>
+
+          <div id="event-filters" class="event-filter-row" aria-label="Filter by CTF event"></div>
+          <div id="tag-filters" class="tag-row" aria-label="Filter by tag"></div>
+          <div id="event-list" class="event-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="assets/js/owner.js"></script>
+    <script src="assets/js/posts.js"></script>
+    <script src="assets/js/blog.js"></script>
+  </body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Markdown writeup editor.">
+    <title>CTF Write-up Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+  </head>
+  <body data-page="editor">
+    <div class="site-shell editor-shell">
+      <header class="topbar editor-topbar" aria-label="Primary navigation">
+        <a class="brand-mark" href="index.html" aria-label="Home">CTF</a>
+        <nav class="nav-links" aria-label="Site">
+          <a href="index.html">Posts</a>
+          <a href="editor.html" aria-current="page">Editor</a>
+          <a href="guide.html">Guide</a>
+          <a href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+      </header>
+
+      <main class="editor-layout">
+        <section class="editor-head" aria-labelledby="editor-title">
+          <div>
+            <p class="terminal-kicker">markdown</p>
+            <h1 id="editor-title">CTF Write-ups</h1>
+          </div>
+          <div class="editor-actions">
+            <button class="button" id="import-button" type="button">Import .md</button>
+            <button class="button" id="export-md" type="button">Export .md</button>
+            <button class="button" id="export-html" type="button">Export HTML</button>
+          </div>
+          <input id="import-file" type="file" accept=".md,.markdown,text/markdown,text/plain" hidden>
+        </section>
+
+        <section class="writeup-meta" aria-label="Writeup metadata">
+          <label>
+            <span>Title</span>
+            <input id="writeup-title" type="text" autocomplete="off">
+          </label>
+          <label>
+            <span>Date</span>
+            <input id="writeup-date" type="date">
+          </label>
+          <label>
+            <span>Tags</span>
+            <input id="writeup-tags" type="text" autocomplete="off">
+          </label>
+          <label>
+            <span>Summary</span>
+            <input id="writeup-summary" type="text" autocomplete="off">
+          </label>
+          <label>
+            <span>Event / CTF</span>
+            <input id="writeup-event" type="text" autocomplete="off">
+          </label>
+          <label>
+            <span>Folder slug</span>
+            <input id="writeup-folder" type="text" autocomplete="off">
+          </label>
+        </section>
+
+        <section class="toolbar" aria-label="Markdown toolbar">
+          <button type="button" data-action="heading" title="Heading">H</button>
+          <button type="button" data-action="bold" title="Bold"><strong>B</strong></button>
+          <button type="button" data-action="italic" title="Italic"><em>I</em></button>
+          <button type="button" data-action="code" title="Inline code">{}</button>
+          <button type="button" data-action="quote" title="Quote">"</button>
+          <button type="button" data-action="link" title="Link">↗</button>
+          <button type="button" data-action="image" title="Image">▧</button>
+          <button type="button" data-action="ul" title="Bulleted list">•</button>
+          <button type="button" data-action="ol" title="Numbered list">1.</button>
+          <button type="button" data-action="task" title="Task list">☑</button>
+          <button type="button" data-action="table" title="Table">▦</button>
+          <button type="button" data-action="fence" title="Code block">&lt;/&gt;</button>
+          <button type="button" data-action="hr" title="Rule">---</button>
+          <span class="toolbar-spacer"></span>
+          <button type="button" data-view="split" class="is-active" title="Split view">Split</button>
+          <button type="button" data-view="write" title="Write only">Write</button>
+          <button type="button" data-view="preview" title="Preview only">Preview</button>
+        </section>
+
+        <section class="editor-grid" id="editor-grid">
+          <div class="editor-pane">
+            <textarea id="markdown-input" spellcheck="false"></textarea>
+          </div>
+          <div class="preview-pane">
+            <div id="markdown-preview" class="markdown-body"></div>
+          </div>
+        </section>
+
+        <section class="publish-helper" aria-labelledby="publish-helper-title">
+          <header class="publish-helper-head">
+            <div>
+              <p class="terminal-kicker">publish</p>
+              <h2 id="publish-helper-title">Generated entries</h2>
+            </div>
+            <div class="editor-actions compact-actions">
+              <button class="button" id="copy-event-entry" type="button">Copy event</button>
+              <button class="button" id="copy-post-entry" type="button">Copy post</button>
+            </div>
+          </header>
+          <div class="snippet-grid">
+            <label>
+              <span>window.CTF_EVENTS entry</span>
+              <textarea id="event-entry" readonly spellcheck="false"></textarea>
+            </label>
+            <label>
+              <span>window.CTF_POSTS entry</span>
+              <textarea id="post-entry" readonly spellcheck="false"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <footer class="editor-status" aria-label="Document status">
+          <span id="save-state">saved locally</span>
+          <span id="suggested-path">posts/</span>
+          <span id="word-count">0 words</span>
+          <span id="cursor-position">Ln 1, Col 1</span>
+        </footer>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="assets/js/owner.js"></script>
+    <script src="assets/js/render.js"></script>
+    <script src="assets/js/editor.js"></script>
+  </body>
+</html>
