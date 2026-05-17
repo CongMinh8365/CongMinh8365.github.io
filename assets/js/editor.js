@@ -214,7 +214,7 @@ print("solve script goes here")
   function updateSuggestedPath() {
     const eventFolder = eventSlug();
     suggestedPath.textContent = `suggested: posts/${eventFolder}/${writeupFilename()}`;
-    assetHint.textContent = `Put downloadable files in posts/${eventFolder}/files/ and images in posts/${eventFolder}/images/.`;
+    assetHint.textContent = `Attach inserts Markdown links only. Copy real files into posts/${eventFolder}/files/ and images into posts/${eventFolder}/images/ before pushing.`;
   }
 
   function tagArray() {
@@ -292,7 +292,15 @@ print("solve script goes here")
     const dot = name.lastIndexOf(".");
     const base = dot === -1 ? name : name.slice(0, dot);
     const ext = dot === -1 ? "" : name.slice(dot).toLowerCase();
-    return `${slugify(base, "asset")}${ext.replace(/[^a-z0-9.]/g, "")}`;
+    const safeBase = String(base || "asset")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9_.-]/g, "")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "asset";
+    return `${safeBase}${ext.replace(/[^a-z0-9.]/g, "")}`;
   }
 
   function addAssetItem(file, folder, markdown) {
