@@ -55,8 +55,8 @@
     link.textContent = post.title;
     title.appendChild(link);
 
-    const summary = document.createElement("p");
-    summary.textContent = post.summary;
+        const summary = document.createElement("p");
+        summary.textContent = post.summary || "Writeup notes and challenge files.";
 
     const tagRow = document.createElement("div");
     tagRow.className = "tag-row";
@@ -205,7 +205,10 @@
       }
 
       const markdown = await response.text();
-      content.innerHTML = window.CTFRender.renderMarkdown(markdown);
+      const basePath = post.file.split("/").slice(0, -1).join("/");
+      content.innerHTML = window.CTFRender.renderMarkdown(markdown, {
+        basePath: basePath ? `${basePath}/` : ""
+      });
       const repeatedTitle = content.querySelector("h1");
       if (repeatedTitle && repeatedTitle.textContent.trim().toLowerCase() === post.title.trim().toLowerCase()) {
         repeatedTitle.remove();

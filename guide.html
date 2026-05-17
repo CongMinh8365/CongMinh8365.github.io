@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Hướng dẫn sử dụng CTF Write-ups blog.">
+    <meta name="description" content="CTF Write-ups usage guide.">
     <title>Guide | CTF Write-ups</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,119 +28,93 @@
           <p class="terminal-kicker">manual</p>
           <h2 id="guide-toc-title">Guide</h2>
           <nav class="toc-list">
-            <a href="#overview">Tổng quan</a>
-            <a href="#home">Trang chủ</a>
-            <a href="#reader">Đọc writeup</a>
+            <a href="#overview">Overview</a>
+            <a href="#events">Events</a>
+            <a href="#assets">Files and Images</a>
             <a href="#editor">Editor</a>
-            <a href="#import-export">Import/Export</a>
-            <a href="#publish">Đăng bài</a>
-            <a href="#static-site">Static site</a>
-            <a href="#owner-mode">Owner mode</a>
-            <a href="#read-only">Read-only sharing</a>
-            <a href="#deploy">Deploy GitHub Pages</a>
+            <a href="#code">Code Highlighting</a>
+            <a href="#autosave">Autosave</a>
+            <a href="#publish">Publish</a>
+            <a href="#owner-mode">Owner Mode</a>
+            <a href="#deploy">Deploy</a>
           </nav>
         </aside>
 
         <article class="reader-panel guide-panel markdown-body">
-          <h1>Hướng Dẫn Sử Dụng</h1>
+          <h1>Usage Guide</h1>
 
-          <h2 id="overview">Tổng Quan</h2>
-          <p>Site này là blog tĩnh cho GitHub Pages. Các bài viết được lưu bằng Markdown trong thư mục <code>posts/&lt;folder-slug&gt;/</code>, còn danh sách hiện trên trang chủ được khai báo trong <code>assets/js/posts.js</code>.</p>
+          <h2 id="overview">Overview</h2>
+          <p>This is a static GitHub Pages blog. Writeups are Markdown files under <code>posts/&lt;event-slug&gt;/</code>. The homepage list is controlled by <code>assets/js/posts.js</code>.</p>
 
-          <h2 id="home">Trang Chủ</h2>
-          <ul>
-            <li><strong>Search</strong>: tìm theo tên challenge, tên giải CTF, ngày, tag hoặc summary.</li>
-            <li><strong>CTF filter</strong>: chọn một giải để chỉ xem các writeup trong giải đó.</li>
-            <li><strong>Tag filter</strong>: lọc theo dạng bài như <code>web</code>, <code>reverse</code>, <code>crypto</code>, <code>pwn</code>.</li>
-            <li><strong>Folder card</strong>: mỗi khối là một giải CTF, bên trong là các challenge/writeup của giải đó.</li>
-          </ul>
+          <h2 id="events">Events</h2>
+          <p><strong>Event / CTF</strong> is the large folder for a competition or platform. The editor automatically turns the event name into a folder slug.</p>
+          <pre><code class="language-text">UMass CTF 2026 -> posts/umass-ctf-2026/
+TAMUctf 2026   -> posts/tamuctf-2026/
+Hack The Box   -> posts/hack-the-box/</code></pre>
+          <p>You no longer need to type a separate folder slug.</p>
 
-          <h2 id="reader">Đọc Writeup</h2>
-          <ul>
-            <li>Click vào tên challenge để mở trang đọc.</li>
-            <li>Khung <strong>Contents</strong> bên trái tự động lấy các heading <code>##</code> và <code>###</code> trong Markdown.</li>
-            <li>Code block được highlight tự động nếu bạn ghi đúng language, ví dụ <code>```python</code>, <code>```bash</code>, <code>```js</code>.</li>
-            <li>Nút <strong>copy</strong> trong mỗi code block dùng để lấy payload, command hoặc solve script.</li>
-          </ul>
+          <h2 id="assets">Files and Images</h2>
+          <p>Use <strong>Attach files</strong> for challenge files, solve scripts, archives, APKs, binaries, and other downloads. Use <strong>Insert images</strong> for screenshots.</p>
+          <p>The editor inserts Markdown links, but the browser cannot physically copy files into the repository. After inserting assets, copy the real files into these folders before committing:</p>
+          <pre><code class="language-text">posts/&lt;event-slug&gt;/files/
+posts/&lt;event-slug&gt;/images/</code></pre>
+          <p>Markdown examples:</p>
+          <pre><code class="language-md">[challenge binary](files/batcave_license_checker)
+[solve script](files/solve.py)
+![IDA screenshot](images/ida-main.png)</code></pre>
+          <p>You can also paste images into the editor. If the clipboard contains an image URL, the editor inserts that URL. If it contains raw image data, the editor inserts a data URL. Data URLs work, but they make the Markdown file large, so repository images are cleaner for final posts.</p>
 
           <h2 id="editor">Editor</h2>
           <ul>
-            <li><strong>Title</strong>: tên challenge/writeup.</li>
-            <li><strong>Date</strong>: ngày publish, định dạng <code>YYYY-MM-DD</code>.</li>
-            <li><strong>Tags</strong>: danh sách tag cách nhau bằng dấu phẩy, ví dụ <code>web, sqli, auth</code>.</li>
-            <li><strong>Event / CTF</strong>: tên giải, ví dụ <code>ImaginaryCTF 2025</code>.</li>
-            <li><strong>Folder slug</strong>: tên thư mục không dấu, không space, ví dụ <code>imaginaryctf-2025</code>. Khi bạn nhập <strong>Event / CTF</strong>, trường này sẽ tự gợi ý nếu bạn chưa sửa thủ công.</li>
-            <li><strong>Split</strong>: viết Markdown bên trái và xem preview bên phải.</li>
-            <li><strong>Write</strong>: chỉ hiện khung viết.</li>
-            <li><strong>Preview</strong>: chỉ hiện bản render.</li>
-            <li><strong>Import .md</strong>: nạp một file Markdown có sẵn vào editor.</li>
-            <li><strong>Export .md</strong>: tải file Markdown kèm front matter.</li>
-            <li><strong>Export HTML</strong>: tải bản HTML đã render, hữu ích khi cần nộp riêng.</li>
+            <li><strong>Title</strong>: writeup title.</li>
+            <li><strong>Date</strong>: publish date.</li>
+            <li><strong>Tags</strong>: comma-separated tags such as <code>reverse, crypto, web</code>.</li>
+            <li><strong>Event / CTF</strong>: competition folder name.</li>
+            <li><strong>Split</strong>: write on the left, preview on the right.</li>
+            <li><strong>Write</strong>: editor only.</li>
+            <li><strong>Preview</strong>: rendered Markdown only.</li>
+            <li><strong>Import .md</strong>: open an existing Markdown file for editing.</li>
+            <li><strong>Export .md</strong>: download the final Markdown file.</li>
+            <li><strong>Export HTML</strong>: download a rendered HTML copy, usually not needed for GitHub Pages.</li>
           </ul>
 
-          <h2 id="import-export">Import / Export Là Gì?</h2>
-          <ul>
-            <li><strong>Import .md</strong>: mở một file Markdown từ máy của bạn vào editor để sửa tiếp. Nút này không đăng bài lên web.</li>
-            <li><strong>Export .md</strong>: tải writeup thành file Markdown. Đây là file chính bạn đặt vào <code>posts/&lt;folder-slug&gt;/</code> để publish lên blog.</li>
-            <li><strong>Export HTML</strong>: tải một bản HTML đã render sẵn. Bản này hữu ích nếu bạn muốn gửi riêng cho ai đó, nhưng bình thường không cần dùng khi deploy GitHub Pages.</li>
-          </ul>
+          <h2 id="code">Code Highlighting</h2>
+          <p>Use fenced code blocks with a language name. Highlight.js handles common languages such as Python, JavaScript, Bash, C, C++, Java, Go, Rust, PHP, Ruby, JSON, YAML, HTML, CSS, SQL, and HTTP.</p>
+          <pre><code class="language-md">```python
+print("solve")
+```
 
-          <h2 id="publish">Đăng Bài Mới</h2>
+```c
+int main(void) {
+  return 0;
+}
+```</code></pre>
+
+          <h2 id="autosave">Autosave</h2>
+          <p>The editor autosaves your draft to browser <code>localStorage</code> after edits. You can close the browser or shut down the machine and continue later from the same browser profile.</p>
+          <p>Autosave is only a draft cache. Export the Markdown file and commit it before publishing.</p>
+
+          <h2 id="publish">Publish</h2>
           <ol>
-            <li>Mở <code>editor.html</code> và viết writeup.</li>
-            <li>Điền <strong>Event / CTF</strong> và <strong>Folder slug</strong>.</li>
-            <li>Kiểm tra dòng <strong>suggested</strong> ở footer editor để biết đường dẫn nên đặt file.</li>
-            <li>Bấm <strong>Export .md</strong>.</li>
-            <li>Tạo thư mục theo gợi ý, ví dụ <code>posts/imaginaryctf-2025/</code>.</li>
-            <li>Đưa file Markdown vừa export vào thư mục đó.</li>
-            <li>Trong editor, copy phần <strong>window.CTF_POSTS entry</strong> và dán vào <code>window.CTF_POSTS</code> trong <code>assets/js/posts.js</code>.</li>
+            <li>Write the post in <code>editor.html</code>.</li>
+            <li>Fill <strong>Title</strong>, <strong>Date</strong>, <strong>Tags</strong>, and <strong>Event / CTF</strong>.</li>
+            <li>Add files and images if needed.</li>
+            <li>Copy real assets into <code>posts/&lt;event-slug&gt;/files/</code> and <code>posts/&lt;event-slug&gt;/images/</code>.</li>
+            <li>Export the Markdown file and place it in <code>posts/&lt;event-slug&gt;/</code>.</li>
+            <li>Copy the generated entries into <code>assets/js/posts.js</code>.</li>
+            <li>Run <code>git add .</code>, <code>git commit</code>, and <code>git push</code>.</li>
           </ol>
-
-          <pre><code class="language-js">{
-  slug: "challenge-name",
-  title: "Challenge Name",
-  date: "2026-05-17",
-  event: "imaginaryctf-2025",
-  tags: ["web", "auth"],
-  summary: "Tóm tắt ngắn hiện trên trang chủ.",
-  file: "posts/imaginaryctf-2025/2026-05-17-challenge-name.md"
-}</code></pre>
-
-          <p>Nếu đây là giải CTF mới, thêm metadata vào <code>window.CTF_EVENTS</code>:</p>
-
-          <pre><code class="language-js">{
-  slug: "imaginaryctf-2025",
-  name: "ImaginaryCTF 2025",
-  date: "2025",
-  summary: "Writeups for ImaginaryCTF 2025."
-}</code></pre>
-
-          <h2 id="static-site">Có Cần Sửa HTML Không?</h2>
-          <p>Không cần sửa các file HTML để thêm bài hoặc thêm giải. Các file HTML chỉ là khung giao diện. Nội dung blog nằm ở hai chỗ:</p>
-          <ul>
-            <li>File writeup Markdown trong <code>posts/&lt;folder-slug&gt;/</code>.</li>
-            <li>Metadata trong <code>assets/js/posts.js</code>.</li>
-          </ul>
-          <p>Vì GitHub Pages là static hosting, trình duyệt không thể tự tạo file mới trong repo hoặc tự commit lên GitHub. Bạn có thể viết, preview, import và export trên giao diện web; bước publish vẫn cần đưa file Markdown và metadata vào repo rồi push lên GitHub.</p>
 
           <h2 id="owner-mode">Owner Mode</h2>
-          <p>Owner controls are visible automatically on <code>localhost</code> and <code>127.0.0.1</code>. On the deployed site, public visitors only see the reading interface.</p>
-          <p>If you want to enable owner controls in your own deployed browser, open the site once with <code>?owner=1</code>. To hide them again, open it with <code>?owner=0</code>.</p>
+          <p>Owner controls are visible automatically on <code>localhost</code> and <code>127.0.0.1</code>. Public visitors do not see <strong>Editor</strong>, <strong>Guide</strong>, or <strong>New writeup</strong>.</p>
+          <p>Enable owner mode in your deployed browser with <code>?owner=1</code>. Disable it with <code>?owner=0</code>.</p>
 
-          <h2 id="read-only">Read-only Sharing</h2>
-          <p>Visitors can read the public blog, but they cannot change your GitHub repository from the website. The public navigation only links to posts and this guide. The editor is for the site owner workflow.</p>
-          <p>If you want a strict read-only deploy, do not publish <code>editor.html</code> and <code>assets/js/editor.js</code> to the GitHub Pages branch. Keep those files locally for writing, then publish only the static reader files.</p>
-
-          <h2 id="deploy">Deploy GitHub Pages</h2>
-          <ol>
-            <li>Đẩy toàn bộ source lên repository GitHub.</li>
-            <li>Vào <strong>Settings</strong> của repo.</li>
-            <li>Chọn <strong>Pages</strong>.</li>
-            <li>Source: <strong>Deploy from a branch</strong>.</li>
-            <li>Branch: chọn branch chính, folder: <strong>/root</strong>.</li>
-            <li>Chờ GitHub build xong, site sẽ có dạng <code>https://username.github.io/</code> nếu repo tên là <code>username.github.io</code>.</li>
-            <li>Nếu repo có tên khác, link thường sẽ là <code>https://username.github.io/repository-name/</code>.</li>
-          </ol>
+          <h2 id="deploy">Deploy</h2>
+          <p>After local changes, push them to GitHub:</p>
+          <pre><code class="language-powershell">git add .
+git commit -m "Update blog"
+git push</code></pre>
+          <p>GitHub Pages redeploys automatically after the push.</p>
         </article>
       </main>
     </div>

@@ -23,6 +23,27 @@
     return markdown.replace(/^---[\s\S]*?---\s*/, "");
   }
 
+  function escapeAttr(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function resolveAssetUrl(url, basePath = "") {
+    const value = String(url || "").trim();
+    if (!value || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value) || value.startsWith("/")) {
+      return value;
+    }
+
+    if (!basePath || value.startsWith("posts/")) {
+      return value;
+    }
+
+    return `${basePath.replace(/\/?$/, "/")}${value.replace(/^\.\//, "")}`;
+  }
+
   function fallbackMarkdown(markdown) {
     const escaped = markdown
       .replace(/&/g, "&amp;")
@@ -40,37 +61,51 @@
       .join("\n");
   }
 
-  function renderMarkdown(markdown) {
+  function renderMarkdown(markdown, options = {}) {
     slugCounts.clear();
+    const basePath = options.basePath || "";
 
     if (window.marked) {
       const renderer = new marked.Renderer();
 
       renderer.heading = function (text, level) {
-        const raw = typeof text === "string" ? text : text.text || "";
+        const token = typeof text === "object" ? text : null;
+        const raw = token ? token.text || token.raw || "" : text;
+        const depth = token ? token.depth : level;
         const id = uniqueSlug(raw);
-        return `<h${level} id="${id}">${raw}</h${level}>`;
+        return `<h${depth} id="${id}">${raw}</h${depth}>`;
+      };
+
+      renderer.link = function (href, title, text) {
+        const token = typeof href === "object" ? href : null;
+        const linkHref = token ? token.href : href;
+        const linkTitle = token ? token.title : title;
+        const linkText = token ? token.text : text;
+        const resolved = resolveAssetUrl(linkHref, basePath);
+        const titleAttr = linkTitle ? ` title="${escapeAttr(linkTitle)}"` : "";
+        return `<a href="${escapeAttr(resolved)}"${titleAttr}>${linkText || resolved}</a>`;
+      };
+
+      renderer.image = function (href, title, text) {
+        const token = typeof href === "object" ? href : null;
+        const imageHref = token ? token.href : href;
+        const imageTitle = token ? token.title : title;
+        const imageAlt = token ? token.text : text;
+        const resolved = resolveAssetUrl(imageHref, basePath);
+        const titleAttr = imageTitle ? ` title="${escapeAttr(imageTitle)}"` : "";
+        return `<img src="${escapeAttr(resolved)}" alt="${escapeAttr(imageAlt)}"${titleAttr}>`;
       };
 
       marked.setOptions({
         breaks: true,
         gfm: true,
-        renderer,
-        highlight(code, language) {
-          if (!window.hljs) {
-            return code;
-          }
-
-          if (language && hljs.getLanguage(language)) {
-            return hljs.highlight(code, { language }).value;
-          }
-
-          return hljs.highlightAuto(code).value;
-        }
+        renderer
       });
 
       const parsed = marked.parse(stripFrontMatter(markdown));
-      return window.DOMPurify ? DOMPurify.sanitize(parsed, { ADD_ATTR: ["target"] }) : parsed;
+      return window.DOMPurify
+        ? DOMPurify.sanitize(parsed, { ADD_ATTR: ["target"], ADD_DATA_URI_TAGS: ["img"] })
+        : parsed;
     }
 
     return fallbackMarkdown(stripFrontMatter(markdown));

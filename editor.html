@@ -51,17 +51,24 @@
             <input id="writeup-tags" type="text" autocomplete="off">
           </label>
           <label>
-            <span>Summary</span>
-            <input id="writeup-summary" type="text" autocomplete="off">
-          </label>
-          <label>
             <span>Event / CTF</span>
             <input id="writeup-event" type="text" autocomplete="off">
           </label>
-          <label>
-            <span>Folder slug</span>
-            <input id="writeup-folder" type="text" autocomplete="off">
-          </label>
+        </section>
+
+        <section class="asset-panel" aria-labelledby="asset-title">
+          <div>
+            <p class="terminal-kicker">assets</p>
+            <h2 id="asset-title">Files and images</h2>
+            <p id="asset-hint">Assets will be linked from the current CTF folder.</p>
+          </div>
+          <div class="asset-actions">
+            <button class="button" id="attach-files" type="button">Attach files</button>
+            <button class="button" id="attach-images" type="button">Insert images</button>
+          </div>
+          <input id="asset-file-input" type="file" multiple hidden>
+          <input id="asset-image-input" type="file" accept="image/*" multiple hidden>
+          <ul id="asset-list" class="asset-list"></ul>
         </section>
 
         <section class="toolbar" aria-label="Markdown toolbar">

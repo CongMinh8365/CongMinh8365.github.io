@@ -664,6 +664,67 @@ textarea:focus {
   font-size: 0.82rem;
 }
 
+.asset-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(17, 17, 17, 0.82);
+}
+
+.asset-panel h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.asset-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.asset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.asset-list {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.asset-list:empty {
+  display: none;
+}
+
+.asset-list li {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.45fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0d0d0d;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.asset-list code {
+  overflow: auto;
+  color: var(--yellow);
+  white-space: nowrap;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -860,6 +921,14 @@ textarea {
 
   .writeup-meta {
     grid-template-columns: 1fr;
+  }
+
+  .asset-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .asset-actions {
+    justify-content: flex-start;
   }
 
   .editor-grid {
