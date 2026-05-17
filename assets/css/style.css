@@ -211,6 +211,21 @@ h3 {
   color: #111111;
 }
 
+.button.danger {
+  border-color: rgba(255, 51, 51, 0.55);
+  color: #ff9a9a;
+}
+
+.button.danger:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .posts-workspace {
   width: min(1040px, 100%);
   margin: clamp(80px, 12vw, 132px) auto 0;

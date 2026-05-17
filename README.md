@@ -65,9 +65,11 @@ In Markdown:
 
 The reader automatically resolves those paths when the post is shown on `post.html`.
 
-The editor can insert these Markdown links, but the browser cannot physically copy files into the repo. After using `Attach files` or `Insert images`, put the selected files into the shown local path before committing.
+The editor inserts these Markdown links. In Chrome, Edge, or Brave on localhost, `Upload local` also copies assets selected during the current editor session into the right local folders.
 
 `Insert images` shows a local preview immediately from the selected image. The final public site still needs the image file to exist under `posts/<event-slug>/images/`.
+
+If you close or reload the editor before uploading, re-attach the asset files or copy them manually. Browser autosave stores text only, not the real selected files.
 
 ## Code Highlighting
 
@@ -95,7 +97,7 @@ Common languages such as Python, JavaScript, Bash, C, C++, Java, Go, Rust, PHP, 
 
 The editor autosaves the current draft to browser `localStorage` after edits. You can close the browser or shut down the machine and continue later from the same browser profile.
 
-Still export the `.md` file before publishing. Autosave is only a draft cache, not a Git commit.
+Autosave is only a draft cache, not a Git commit. Click `Upload local` when a writeup is ready, or export the `.md` file and publish manually.
 
 ## Publish A Writeup
 
@@ -103,14 +105,11 @@ Still export the `.md` file before publishing. Autosave is only a draft cache, n
 2. Fill `Title`, `Date`, `Tags`, and `Event / CTF`.
 3. Write the Markdown.
 4. Add assets with `Attach files` or `Insert images` if needed.
-5. Put real files into `posts/<event-slug>/files/` and images into `posts/<event-slug>/images/`.
-6. Export the Markdown file.
-7. Put the Markdown file into `posts/<event-slug>/`.
-8. Set `Homepage summary` if the generated summary is not what you want. This text is only shown on the homepage card.
-9. Copy the generated `window.CTF_EVENTS` entry if the event is new.
-10. Copy the generated `window.CTF_POSTS` entry for the writeup.
-11. Paste those entries into `assets/js/posts.js`.
-12. Commit and push:
+5. Set `Homepage summary` if the generated summary is not what you want. This text is only shown on the homepage card.
+6. Click `Upload local`.
+7. Choose the project root folder, for example `D:\Cong Minh\Blog CTF`.
+8. The editor writes the Markdown file, copies current-session assets, and updates `assets/js/posts.js`.
+9. Commit and push:
 
 ```powershell
 git add .
@@ -119,6 +118,10 @@ git push
 ```
 
 GitHub Pages will redeploy automatically after the push.
+
+If `Upload local` is not available in your browser, use `Export .md`, copy assets manually, then paste the generated entries into `assets/js/posts.js`.
+
+To delete a published post locally, open `editor.html`, click `Delete post`, enter the post slug, choose the project root folder, then commit and push the deletion.
 
 ## Deploy On GitHub Pages
 

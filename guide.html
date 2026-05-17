@@ -55,7 +55,7 @@ Hack The Box   -> posts/hack-the-box/</code></pre>
 
           <h2 id="assets">Files and Images</h2>
           <p>Use <strong>Attach files</strong> for challenge files, solve scripts, archives, APKs, binaries, and other downloads. Use <strong>Insert images</strong> for screenshots.</p>
-          <p>The editor inserts Markdown links, but the browser cannot physically copy files into the repository. After inserting assets, copy the real files into these folders before committing:</p>
+          <p>The editor inserts Markdown links. If you use <strong>Upload local</strong> in Chrome, Edge, or Brave, the selected assets from the current editor session are also copied into these folders:</p>
           <pre><code class="language-text">posts/&lt;event-slug&gt;/files/
 posts/&lt;event-slug&gt;/images/</code></pre>
           <p>Markdown examples:</p>
@@ -63,6 +63,7 @@ posts/&lt;event-slug&gt;/images/</code></pre>
 [solve script](files/solve.py)
 ![IDA screenshot](images/ida-main.png)</code></pre>
           <p><strong>Insert images</strong> shows a local preview immediately from the selected image. The final public site still needs the image file to exist under <code>posts/&lt;event-slug&gt;/images/</code>.</p>
+          <p>If you close or reload the editor before uploading, re-attach the asset files or copy them manually. Browsers do not keep real file objects inside <code>localStorage</code>.</p>
           <p>You can also paste images into the editor. If the clipboard contains an image URL, the editor inserts that URL. If it contains raw image data, the editor inserts a data URL. Data URLs work, but they make the Markdown file large, so repository images are cleaner for final posts.</p>
 
           <h2 id="editor">Editor</h2>
@@ -77,6 +78,9 @@ posts/&lt;event-slug&gt;/images/</code></pre>
             <li><strong>Import .md</strong>: open an existing Markdown file for editing.</li>
             <li><strong>Export .md</strong>: download the final Markdown file.</li>
             <li><strong>Export HTML</strong>: download a rendered HTML copy, usually not needed for GitHub Pages.</li>
+            <li><strong>Upload local</strong>: write the Markdown file, copied current-session assets, and <code>assets/js/posts.js</code> into your local project folder.</li>
+            <li><strong>New draft</strong>: clear the current autosaved draft and start from the template.</li>
+            <li><strong>Delete post</strong>: remove a post entry from <code>assets/js/posts.js</code> and delete its Markdown file locally.</li>
           </ul>
 
           <h2 id="code">Code Highlighting</h2>
@@ -93,19 +97,20 @@ int main(void) {
 
           <h2 id="autosave">Autosave</h2>
           <p>The editor autosaves your draft to browser <code>localStorage</code> after edits. You can close the browser or shut down the machine and continue later from the same browser profile.</p>
-          <p>Autosave is only a draft cache. Export the Markdown file and commit it before publishing.</p>
+          <p>Autosave is only a draft cache. Use <strong>Upload local</strong> or export the Markdown file before publishing.</p>
 
           <h2 id="publish">Publish</h2>
           <ol>
             <li>Write the post in <code>editor.html</code>.</li>
             <li>Fill <strong>Title</strong>, <strong>Date</strong>, <strong>Tags</strong>, and <strong>Event / CTF</strong>.</li>
             <li>Add files and images if needed.</li>
-            <li>Copy real assets into <code>posts/&lt;event-slug&gt;/files/</code> and <code>posts/&lt;event-slug&gt;/images/</code>.</li>
-            <li>Export the Markdown file and place it in <code>posts/&lt;event-slug&gt;/</code>.</li>
             <li>Set <strong>Homepage summary</strong> if the generated summary is not what you want. This text is only shown on the homepage card.</li>
-            <li>Copy the generated entries into <code>assets/js/posts.js</code>.</li>
+            <li>Click <strong>Upload local</strong>.</li>
+            <li>Choose the project root folder, for example <code>D:\Cong Minh\Blog CTF</code>.</li>
+            <li>The editor writes the Markdown file, copies assets selected in this session, and updates <code>assets/js/posts.js</code>.</li>
             <li>Run <code>git add .</code>, <code>git commit</code>, and <code>git push</code>.</li>
           </ol>
+          <p>If <strong>Upload local</strong> is not available in your browser, use <strong>Export .md</strong>, copy assets manually, then copy the generated entries into <code>assets/js/posts.js</code>.</p>
 
           <h2 id="owner-mode">Owner Mode</h2>
           <p>Owner controls are visible automatically on <code>localhost</code> and <code>127.0.0.1</code>. Public visitors do not see <strong>Editor</strong>, <strong>Guide</strong>, or <strong>New writeup</strong>.</p>
@@ -120,6 +125,9 @@ git push</code></pre>
         </article>
       </main>
     </div>
-    <script src="assets/js/owner.js"></script>
+    <script>
+      const ctfAssetVersion = Date.now();
+      document.write(`<script src="assets/js/owner.js?v=${ctfAssetVersion}"><\/script>`);
+    </script>
   </body>
 </html>

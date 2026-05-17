@@ -20,6 +20,7 @@
   const assetFileInput = document.querySelector("#asset-file-input");
   const assetImageInput = document.querySelector("#asset-image-input");
   const assetPreviewMap = {};
+  const attachedAssets = [];
 
   const defaultMarkdown = `# HTB - Challenge Name
 
@@ -166,6 +167,24 @@ print("solve script goes here")
     input.value = defaultMarkdown;
   }
 
+  function resetAssetState() {
+    attachedAssets.length = 0;
+    Object.keys(assetPreviewMap).forEach((key) => delete assetPreviewMap[key]);
+    assetList.innerHTML = "";
+    assetFileInput.value = "";
+    assetImageInput.value = "";
+  }
+
+  function resetDraft(status = "saved locally") {
+    localStorage.removeItem(storageKey);
+    resetAssetState();
+    setDefaults();
+    render();
+    save();
+    updateCursor();
+    saveState.textContent = status;
+  }
+
   function wrapSelection(before, after = before, placeholder = "text") {
     const start = input.selectionStart;
     const end = input.selectionEnd;
@@ -218,7 +237,7 @@ print("solve script goes here")
   function updateSuggestedPath() {
     const eventFolder = eventSlug();
     suggestedPath.textContent = `suggested: posts/${eventFolder}/${writeupFilename()}`;
-    assetHint.textContent = `Attach inserts Markdown links only. Copy real files into posts/${eventFolder}/files/ and images into posts/${eventFolder}/images/ before pushing.`;
+    assetHint.textContent = `Upload local copies current-session assets into posts/${eventFolder}/files/ and posts/${eventFolder}/images/. Re-attach files after a browser reload.`;
   }
 
   function tagArray() {
@@ -281,6 +300,216 @@ print("solve script goes here")
 }`;
   }
 
+  function currentEventEntry() {
+    const eventTitle = eventName.value || "CTF Event";
+    return {
+      slug: eventSlug(),
+      name: eventTitle,
+      date: (date.value || today()).slice(0, 4),
+      summary: `${eventTitle} writeups.`
+    };
+  }
+
+  function currentPostEntry() {
+    return {
+      slug: slugify(title.value),
+      title: title.value || "Challenge Name",
+      date: date.value || today(),
+      event: eventSlug(),
+      tags: tagArray(),
+      summary: inferSummary(input.value),
+      file: postPath()
+    };
+  }
+
+  function cloneEntries(value) {
+    return JSON.parse(JSON.stringify(Array.isArray(value) ? value : []));
+  }
+
+  function upsertBySlug(items, nextItem) {
+    const index = items.findIndex((item) => item.slug === nextItem.slug);
+    if (index === -1) {
+      items.push(nextItem);
+      return items;
+    }
+
+    items[index] = { ...items[index], ...nextItem };
+    return items;
+  }
+
+  function formatPostsFile(events, posts) {
+    return `window.CTF_EVENTS = ${JSON.stringify(events, null, 2)};\n\nwindow.CTF_POSTS = ${JSON.stringify(posts, null, 2)};\n`;
+  }
+
+  function assertLocalUploadSupport() {
+    if (!window.showDirectoryPicker) {
+      throw new Error("Local upload needs Chrome, Edge, or Brave on localhost. Use Export .md if your browser does not support folder write access.");
+    }
+  }
+
+  async function pickProjectRoot() {
+    assertLocalUploadSupport();
+    const root = await window.showDirectoryPicker({
+      id: "ctf-writeups-project",
+      mode: "readwrite"
+    });
+
+    try {
+      await root.getFileHandle("index.html");
+      await root.getDirectoryHandle("assets");
+    } catch {
+      throw new Error("Please choose the project root folder, for example D:\\Cong Minh\\Blog CTF.");
+    }
+
+    return root;
+  }
+
+  async function ensureDirectory(root, parts) {
+    let directory = root;
+    for (const part of parts.filter(Boolean)) {
+      directory = await directory.getDirectoryHandle(part, { create: true });
+    }
+    return directory;
+  }
+
+  async function getDirectory(root, parts) {
+    let directory = root;
+    for (const part of parts.filter(Boolean)) {
+      directory = await directory.getDirectoryHandle(part);
+    }
+    return directory;
+  }
+
+  async function writeTextFile(directory, filename, content) {
+    const handle = await directory.getFileHandle(filename, { create: true });
+    const writable = await handle.createWritable();
+    await writable.write(content);
+    await writable.close();
+  }
+
+  async function writeBlobFile(directory, filename, blob) {
+    const handle = await directory.getFileHandle(filename, { create: true });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }
+
+  async function removeFile(root, relativePath) {
+    const parts = String(relativePath || "").split("/").filter(Boolean);
+    const filename = parts.pop();
+    if (!filename) {
+      return false;
+    }
+
+    const directory = await getDirectory(root, parts);
+    await directory.removeEntry(filename);
+    return true;
+  }
+
+  async function updatePostsIndex(root, postMode = "upsert", postSlug = "") {
+    const assetsJs = await ensureDirectory(root, ["assets", "js"]);
+    const events = cloneEntries(window.CTF_EVENTS);
+    let posts = cloneEntries(window.CTF_POSTS);
+
+    if (postMode === "delete") {
+      posts = posts.filter((post) => post.slug !== postSlug);
+    } else {
+      upsertBySlug(events, currentEventEntry());
+      upsertBySlug(posts, currentPostEntry());
+    }
+
+    await writeTextFile(assetsJs, "posts.js", formatPostsFile(events, posts));
+    window.CTF_EVENTS = events;
+    window.CTF_POSTS = posts;
+  }
+
+  async function uploadLocal() {
+    save();
+    render();
+    const button = document.querySelector("#upload-local");
+    const previousText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Uploading...";
+    saveState.textContent = "uploading locally...";
+
+    try {
+      const root = await pickProjectRoot();
+      const postDirectory = await ensureDirectory(root, ["posts", eventSlug()]);
+      const markdown = `${frontMatter()}${window.CTFRender.stripFrontMatter(input.value)}`;
+      await writeTextFile(postDirectory, writeupFilename(), markdown);
+
+      for (const asset of attachedAssets) {
+        const assetDirectory = await ensureDirectory(root, ["posts", eventSlug(), asset.folder]);
+        await writeBlobFile(assetDirectory, asset.filename, asset.file);
+      }
+
+      await updatePostsIndex(root);
+      resetDraft("uploaded locally; draft reset");
+      window.alert("Uploaded locally. Run git add, git commit, and git push to publish it to congminh8365.github.io.");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        saveState.textContent = "upload canceled";
+      } else {
+        saveState.textContent = "upload failed";
+        window.alert(error.message || "Upload failed.");
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = previousText;
+    }
+  }
+
+  async function deleteLocalPost() {
+    const available = cloneEntries(window.CTF_POSTS);
+    const defaultSlug = slugify(title.value);
+    const postSlug = window.prompt("Post slug to delete", defaultSlug);
+    if (!postSlug) {
+      return;
+    }
+
+    const target = available.find((post) => post.slug === postSlug.trim());
+    if (!target) {
+      window.alert(`No post found with slug: ${postSlug}`);
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${target.title}" from local posts.js and remove its Markdown file?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const button = document.querySelector("#delete-post");
+    const previousText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Deleting...";
+    saveState.textContent = "deleting locally...";
+
+    try {
+      const root = await pickProjectRoot();
+      await updatePostsIndex(root, "delete", target.slug);
+      let removedMarkdown = false;
+      try {
+        removedMarkdown = await removeFile(root, target.file);
+      } catch {
+        removedMarkdown = false;
+      }
+
+      resetDraft("deleted locally; draft reset");
+      const markdownText = removedMarkdown ? "Markdown file removed." : "Post entry removed, but Markdown file was not found.";
+      window.alert(`${markdownText} Run git add, git commit, and git push to publish the deletion.`);
+    } catch (error) {
+      if (error.name === "AbortError") {
+        saveState.textContent = "delete canceled";
+      } else {
+        saveState.textContent = "delete failed";
+        window.alert(error.message || "Delete failed.");
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = previousText;
+    }
+  }
+
   async function copyText(text, button) {
     try {
       await navigator.clipboard.writeText(text);
@@ -330,6 +559,12 @@ print("solve script goes here")
     for (const file of [...files]) {
       const filename = safeFileName(file.name);
       const label = file.name.replace(/\.[^.]+$/, "");
+      const existingIndex = attachedAssets.findIndex((asset) => asset.folder === folder && asset.filename === filename);
+      if (existingIndex !== -1) {
+        attachedAssets.splice(existingIndex, 1);
+      }
+      attachedAssets.push({ file, folder, filename });
+
       if (folder === "images") {
         const dataUrl = await fileToDataUrl(file);
         assetPreviewMap[`images/${filename}`] = dataUrl;
@@ -399,6 +634,13 @@ print("solve script goes here")
   document.querySelector("#import-button").addEventListener("click", () => importFile.click());
   document.querySelector("#attach-files").addEventListener("click", () => assetFileInput.click());
   document.querySelector("#attach-images").addEventListener("click", () => assetImageInput.click());
+  document.querySelector("#upload-local").addEventListener("click", uploadLocal);
+  document.querySelector("#delete-post").addEventListener("click", deleteLocalPost);
+  document.querySelector("#new-draft").addEventListener("click", () => {
+    if (window.confirm("Clear this draft and start a new writeup?")) {
+      resetDraft("new draft ready");
+    }
+  });
 
   importFile.addEventListener("change", async () => {
     const file = importFile.files[0];

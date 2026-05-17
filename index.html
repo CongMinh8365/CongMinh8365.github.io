@@ -52,8 +52,11 @@
       </main>
     </div>
 
-    <script src="assets/js/owner.js"></script>
-    <script src="assets/js/posts.js"></script>
-    <script src="assets/js/blog.js"></script>
+    <script>
+      const ctfAssetVersion = Date.now();
+      document.write(`<script src="assets/js/owner.js?v=${ctfAssetVersion}"><\/script>`);
+      document.write(`<script src="assets/js/posts.js?v=${ctfAssetVersion}"><\/script>`);
+      document.write(`<script src="assets/js/blog.js?v=${ctfAssetVersion}"><\/script>`);
+    </script>
   </body>
 </html>

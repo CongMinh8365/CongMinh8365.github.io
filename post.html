@@ -43,12 +43,15 @@
       </main>
     </div>
 
-    <script src="assets/js/owner.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="assets/js/posts.js"></script>
-    <script src="assets/js/render.js"></script>
-    <script src="assets/js/blog.js"></script>
+    <script>
+      const ctfAssetVersion = Date.now();
+      document.write(`<script src="assets/js/owner.js?v=${ctfAssetVersion}"><\/script>`);
+      document.write(`<script src="assets/js/posts.js?v=${ctfAssetVersion}"><\/script>`);
+      document.write(`<script src="assets/js/render.js?v=${ctfAssetVersion}"><\/script>`);
+      document.write(`<script src="assets/js/blog.js?v=${ctfAssetVersion}"><\/script>`);
+    </script>
   </body>
 </html>
