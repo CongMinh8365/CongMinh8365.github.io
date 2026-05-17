@@ -10,6 +10,12 @@ window.CTF_EVENTS = [
     name: "ImaginaryCTF 2025",
     date: "2025",
     summary: "Competition writeups grouped by challenge."
+  },
+  {
+    slug: "umass-ctf-2026",
+    name: "UMass CTF 2026",
+    date: "2026",
+    summary: "Writeups for UMass CTF 2026."
   }
 ];
 
@@ -31,5 +37,14 @@ window.CTF_POSTS = [
     tags: ["web", "auth"],
     summary: "A reusable checklist-style writeup for HTTP auth flaws, request diffs, and exploit notes.",
     file: "posts/imaginaryctf-2025/2026-04-22-auth-bypass.md"
+  },
+  {
+    slug: "batcave-bitflips",
+    title: "Batcave Bitflips",
+    date: "2026-04-12",
+    event: "umass-ctf-2026",
+    tags: ["reverse"],
+    summary: "Reverse writeup for Batcave Bitflips.",
+    file: "posts/umass-ctf-2026/2026-04-12-batcave-bitflips.md"
   }
 ];
