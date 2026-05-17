@@ -18,6 +18,7 @@
   const assetList = document.querySelector("#asset-list");
   const assetFileInput = document.querySelector("#asset-file-input");
   const assetImageInput = document.querySelector("#asset-image-input");
+  const assetPreviewMap = {};
 
   const defaultMarkdown = `# HTB - Challenge Name
 
@@ -93,7 +94,8 @@ print("solve script goes here")
 
   function render() {
     preview.innerHTML = window.CTFRender.renderMarkdown(input.value, {
-      basePath: `posts/${eventSlug()}/`
+      basePath: `posts/${eventSlug()}/`,
+      assetMap: assetPreviewMap
     });
     window.CTFRender.addCodeCopyButtons(preview);
     const words = input.value.trim().split(/\s+/).filter(Boolean).length;
@@ -302,15 +304,21 @@ print("solve script goes here")
     insertBlock(markdown);
   }
 
-  function attachAssets(files, folder) {
-    [...files].forEach((file) => {
+  async function attachAssets(files, folder) {
+    for (const file of [...files]) {
       const filename = safeFileName(file.name);
       const label = file.name.replace(/\.[^.]+$/, "");
+      if (folder === "images") {
+        const dataUrl = await fileToDataUrl(file);
+        assetPreviewMap[`images/${filename}`] = dataUrl;
+        assetPreviewMap[`posts/${eventSlug()}/images/${filename}`] = dataUrl;
+      }
+
       const markdown = folder === "images"
         ? `![${label}](images/${filename})\n`
         : `- [${file.name}](files/${filename})\n`;
       addAssetItem(file, folder, markdown);
-    });
+    }
   }
 
   function fileToDataUrl(file) {
@@ -386,8 +394,13 @@ print("solve script goes here")
     scheduleSave();
   });
 
-  assetFileInput.addEventListener("change", () => attachAssets(assetFileInput.files, "files"));
-  assetImageInput.addEventListener("change", () => attachAssets(assetImageInput.files, "images"));
+  assetFileInput.addEventListener("change", () => {
+    attachAssets(assetFileInput.files, "files");
+  });
+
+  assetImageInput.addEventListener("change", () => {
+    attachAssets(assetImageInput.files, "images");
+  });
 
   input.addEventListener("paste", async (event) => {
     const clipboard = event.clipboardData;

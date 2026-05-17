@@ -67,6 +67,8 @@ The reader automatically resolves those paths when the post is shown on `post.ht
 
 The editor can insert these Markdown links, but the browser cannot physically copy files into the repo. After using `Attach files` or `Insert images`, put the selected files into the shown local path before committing.
 
+`Insert images` shows a local preview immediately from the selected image. The final public site still needs the image file to exist under `posts/<event-slug>/images/`.
+
 ## Code Highlighting
 
 Use fenced code blocks:

@@ -31,8 +31,12 @@
       .replace(/>/g, "&gt;");
   }
 
-  function resolveAssetUrl(url, basePath = "") {
+  function resolveAssetUrl(url, basePath = "", assetMap = {}) {
     const value = String(url || "").trim();
+    if (assetMap[value]) {
+      return assetMap[value];
+    }
+
     if (!value || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value) || value.startsWith("/")) {
       return value;
     }
@@ -41,7 +45,8 @@
       return value;
     }
 
-    return `${basePath.replace(/\/?$/, "/")}${value.replace(/^\.\//, "")}`;
+    const resolved = `${basePath.replace(/\/?$/, "/")}${value.replace(/^\.\//, "")}`;
+    return assetMap[resolved] || resolved;
   }
 
   function fallbackMarkdown(markdown) {
@@ -64,6 +69,7 @@
   function renderMarkdown(markdown, options = {}) {
     slugCounts.clear();
     const basePath = options.basePath || "";
+    const assetMap = options.assetMap || {};
 
     if (window.marked) {
       const renderer = new marked.Renderer();
@@ -81,7 +87,7 @@
         const linkHref = token ? token.href : href;
         const linkTitle = token ? token.title : title;
         const linkText = token ? token.text : text;
-        const resolved = resolveAssetUrl(linkHref, basePath);
+        const resolved = resolveAssetUrl(linkHref, basePath, assetMap);
         const titleAttr = linkTitle ? ` title="${escapeAttr(linkTitle)}"` : "";
         return `<a href="${escapeAttr(resolved)}"${titleAttr}>${linkText || resolved}</a>`;
       };
@@ -91,7 +97,7 @@
         const imageHref = token ? token.href : href;
         const imageTitle = token ? token.title : title;
         const imageAlt = token ? token.text : text;
-        const resolved = resolveAssetUrl(imageHref, basePath);
+        const resolved = resolveAssetUrl(imageHref, basePath, assetMap);
         const titleAttr = imageTitle ? ` title="${escapeAttr(imageTitle)}"` : "";
         return `<img src="${escapeAttr(resolved)}" alt="${escapeAttr(imageAlt)}"${titleAttr}>`;
       };
