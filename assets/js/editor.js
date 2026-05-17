@@ -14,6 +14,7 @@
   const importFile = document.querySelector("#import-file");
   const eventEntry = document.querySelector("#event-entry");
   const postEntry = document.querySelector("#post-entry");
+  const homepageSummary = document.querySelector("#homepage-summary");
   const assetHint = document.querySelector("#asset-hint");
   const assetList = document.querySelector("#asset-list");
   const assetFileInput = document.querySelector("#asset-file-input");
@@ -82,6 +83,7 @@ print("solve script goes here")
       date: date.value,
       tags: tags.value,
       event: eventName.value,
+      homepageSummary: homepageSummary.value,
       markdown: input.value
     };
   }
@@ -141,6 +143,7 @@ print("solve script goes here")
         date.value = data.date || today();
         tags.value = data.tags || "reverse, htb";
         eventName.value = data.event || "Hack The Box";
+        homepageSummary.value = data.homepageSummary || "";
         input.value = data.markdown || defaultMarkdown;
       } catch {
         setDefaults();
@@ -159,6 +162,7 @@ print("solve script goes here")
     date.value = today();
     tags.value = "reverse, htb";
     eventName.value = "Hack The Box";
+    homepageSummary.value = "";
     input.value = defaultMarkdown;
   }
 
@@ -229,8 +233,12 @@ print("solve script goes here")
   }
 
   function inferSummary(markdown) {
-    const cleaned = window.CTFRender.stripFrontMatter(markdown)
+    const body = window.CTFRender.stripFrontMatter(markdown);
+    const descriptionMatch = body.match(/^##\s+Description\s*\n([\s\S]*?)(?=\n##\s+|\s*$)/im);
+    const source = descriptionMatch ? descriptionMatch[1] : body;
+    const cleaned = source
       .replace(/```[\s\S]*?```/g, " ")
+      .replace(/<img\b[^>]*>/gi, " ")
       .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
       .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
       .replace(/[`*_>#-]/g, " ");
@@ -238,9 +246,15 @@ print("solve script goes here")
     const line = cleaned
       .split("\n")
       .map((item) => item.trim())
-      .find((item) => item && !/^h?tb\s*-/i.test(item) && item.length > 18);
+      .find((item) => {
+        if (!item || item.length <= 18) {
+          return false;
+        }
 
-    const summary = line || `Writeup for ${title.value || "challenge"}.`;
+        return !/^(?:h?tb\s*-|category\s*:|difficulty\s*:|flag\s*:|files?\s*$|summary\s*$)/i.test(item);
+      });
+
+    const summary = homepageSummary.value.trim() || line || `Writeup for ${title.value || "challenge"}.`;
     return summary.length > 150 ? `${summary.slice(0, 147)}...` : summary;
   }
 
@@ -452,7 +466,7 @@ print("solve script goes here")
     copyText(postEntry.value, event.currentTarget);
   });
 
-  [input, title, date, tags, eventName].forEach((element) => {
+  [input, title, date, tags, eventName, homepageSummary].forEach((element) => {
     element.addEventListener("input", scheduleSave);
   });
 

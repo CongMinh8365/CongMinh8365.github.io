@@ -106,10 +106,11 @@ Still export the `.md` file before publishing. Autosave is only a draft cache, n
 5. Put real files into `posts/<event-slug>/files/` and images into `posts/<event-slug>/images/`.
 6. Export the Markdown file.
 7. Put the Markdown file into `posts/<event-slug>/`.
-8. Copy the generated `window.CTF_EVENTS` entry if the event is new.
-9. Copy the generated `window.CTF_POSTS` entry for the writeup.
-10. Paste those entries into `assets/js/posts.js`.
-11. Commit and push:
+8. Set `Homepage summary` if the generated summary is not what you want. This text is only shown on the homepage card.
+9. Copy the generated `window.CTF_EVENTS` entry if the event is new.
+10. Copy the generated `window.CTF_POSTS` entry for the writeup.
+11. Paste those entries into `assets/js/posts.js`.
+12. Commit and push:
 
 ```powershell
 git add .

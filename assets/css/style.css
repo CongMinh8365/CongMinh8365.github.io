@@ -852,6 +852,30 @@ textarea {
   margin-top: 0;
 }
 
+.publish-summary {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.publish-summary input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0d0d0d;
+  color: var(--text);
+  padding: 0 12px;
+  outline: none;
+}
+
+.publish-summary input:focus {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(255, 216, 74, 0.12);
+}
+
 .snippet-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
