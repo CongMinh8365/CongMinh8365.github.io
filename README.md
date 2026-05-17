@@ -121,7 +121,7 @@ GitHub Pages will redeploy automatically after the push.
 
 If `Upload local` is not available in your browser, use `Export .md`, copy assets manually, then paste the generated entries into `assets/js/posts.js`.
 
-To delete a published post locally, open `editor.html`, click `Delete post`, enter the post slug, choose the project root folder, then commit and push the deletion.
+To edit or delete a published post locally, use the three-dot menu on the homepage post card or inside the post page. `Edit` opens the post in the editor. `Delete` removes it from `assets/js/posts.js` and deletes its Markdown file locally. After either action, commit and push.
 
 ## Deploy On GitHub Pages
 

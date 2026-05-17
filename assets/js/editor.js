@@ -21,6 +21,7 @@
   const assetImageInput = document.querySelector("#asset-image-input");
   const assetPreviewMap = {};
   const attachedAssets = [];
+  let editingPost = null;
 
   const defaultMarkdown = `# HTB - Challenge Name
 
@@ -67,6 +68,19 @@ print("solve script goes here")
   }
 
   function eventSlug() {
+    const eventTitle = eventName.value.trim();
+    const existing = (window.CTF_EVENTS || []).find((event) => event.name.toLowerCase() === eventTitle.toLowerCase());
+    if (existing) {
+      return existing.slug;
+    }
+
+    if (editingPost) {
+      const originalEvent = (window.CTF_EVENTS || []).find((event) => event.slug === editingPost.event);
+      if (originalEvent && originalEvent.name.toLowerCase() === eventTitle.toLowerCase()) {
+        return editingPost.event;
+      }
+    }
+
     return slugify(eventName.value, "ctf-event");
   }
 
@@ -135,7 +149,17 @@ print("solve script goes here")
     }, {});
   }
 
-  function load() {
+  async function load() {
+    const params = new URLSearchParams(window.location.search);
+    const editSlug = params.get("edit");
+    if (editSlug) {
+      const post = (window.CTF_POSTS || []).find((item) => item.slug === editSlug);
+      if (post) {
+        await loadPublishedPost(post);
+        return;
+      }
+    }
+
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
@@ -158,6 +182,33 @@ print("solve script goes here")
     updateCursor();
   }
 
+  async function loadPublishedPost(post) {
+    editingPost = { ...post };
+    const event = (window.CTF_EVENTS || []).find((item) => item.slug === post.event);
+    let status = "editing published writeup";
+    title.value = post.title || "Challenge Name";
+    date.value = post.date || today();
+    tags.value = (post.tags || []).join(", ");
+    eventName.value = event?.name || post.event || "CTF Event";
+    homepageSummary.value = post.summary || "";
+
+    try {
+      const response = await fetch(`${post.file}?v=${Date.now()}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      input.value = await response.text();
+    } catch {
+      input.value = defaultMarkdown;
+      status = "could not load published markdown";
+    }
+
+    render();
+    save();
+    updateCursor();
+    saveState.textContent = status;
+  }
+
   function setDefaults() {
     title.value = "HTB - Challenge Name";
     date.value = today();
@@ -178,6 +229,7 @@ print("solve script goes here")
   function resetDraft(status = "saved locally") {
     localStorage.removeItem(storageKey);
     resetAssetState();
+    editingPost = null;
     setDefaults();
     render();
     save();
@@ -302,6 +354,11 @@ print("solve script goes here")
 
   function currentEventEntry() {
     const eventTitle = eventName.value || "CTF Event";
+    const existing = (window.CTF_EVENTS || []).find((event) => event.slug === eventSlug());
+    if (existing) {
+      return existing;
+    }
+
     return {
       slug: eventSlug(),
       name: eventTitle,
@@ -414,6 +471,9 @@ print("solve script goes here")
     if (postMode === "delete") {
       posts = posts.filter((post) => post.slug !== postSlug);
     } else {
+      if (editingPost) {
+        posts = posts.filter((post) => post.slug !== editingPost.slug);
+      }
       upsertBySlug(events, currentEventEntry());
       upsertBySlug(posts, currentPostEntry());
     }
@@ -444,6 +504,13 @@ print("solve script goes here")
       }
 
       await updatePostsIndex(root);
+      if (editingPost && editingPost.file !== postPath()) {
+        try {
+          await removeFile(root, editingPost.file);
+        } catch {
+          // The old Markdown path may already have been moved or deleted.
+        }
+      }
       resetDraft("uploaded locally; draft reset");
       window.alert("Uploaded locally. Run git add, git commit, and git push to publish it to congminh8365.github.io.");
     } catch (error) {
@@ -452,57 +519,6 @@ print("solve script goes here")
       } else {
         saveState.textContent = "upload failed";
         window.alert(error.message || "Upload failed.");
-      }
-    } finally {
-      button.disabled = false;
-      button.textContent = previousText;
-    }
-  }
-
-  async function deleteLocalPost() {
-    const available = cloneEntries(window.CTF_POSTS);
-    const defaultSlug = slugify(title.value);
-    const postSlug = window.prompt("Post slug to delete", defaultSlug);
-    if (!postSlug) {
-      return;
-    }
-
-    const target = available.find((post) => post.slug === postSlug.trim());
-    if (!target) {
-      window.alert(`No post found with slug: ${postSlug}`);
-      return;
-    }
-
-    const confirmed = window.confirm(`Delete "${target.title}" from local posts.js and remove its Markdown file?`);
-    if (!confirmed) {
-      return;
-    }
-
-    const button = document.querySelector("#delete-post");
-    const previousText = button.textContent;
-    button.disabled = true;
-    button.textContent = "Deleting...";
-    saveState.textContent = "deleting locally...";
-
-    try {
-      const root = await pickProjectRoot();
-      await updatePostsIndex(root, "delete", target.slug);
-      let removedMarkdown = false;
-      try {
-        removedMarkdown = await removeFile(root, target.file);
-      } catch {
-        removedMarkdown = false;
-      }
-
-      resetDraft("deleted locally; draft reset");
-      const markdownText = removedMarkdown ? "Markdown file removed." : "Post entry removed, but Markdown file was not found.";
-      window.alert(`${markdownText} Run git add, git commit, and git push to publish the deletion.`);
-    } catch (error) {
-      if (error.name === "AbortError") {
-        saveState.textContent = "delete canceled";
-      } else {
-        saveState.textContent = "delete failed";
-        window.alert(error.message || "Delete failed.");
       }
     } finally {
       button.disabled = false;
@@ -635,7 +651,6 @@ print("solve script goes here")
   document.querySelector("#attach-files").addEventListener("click", () => assetFileInput.click());
   document.querySelector("#attach-images").addEventListener("click", () => assetImageInput.click());
   document.querySelector("#upload-local").addEventListener("click", uploadLocal);
-  document.querySelector("#delete-post").addEventListener("click", deleteLocalPost);
   document.querySelector("#new-draft").addEventListener("click", () => {
     if (window.confirm("Clear this draft and start a new writeup?")) {
       resetDraft("new draft ready");
@@ -693,11 +708,6 @@ print("solve script goes here")
 
   document.querySelector("#export-md").addEventListener("click", () => {
     exportFile(`${frontMatter()}${window.CTFRender.stripFrontMatter(input.value)}`, writeupFilename(), "text/markdown");
-  });
-
-  document.querySelector("#export-html").addEventListener("click", () => {
-    const html = `<!doctype html>\n<meta charset="utf-8">\n<title>${title.value}</title>\n${preview.innerHTML}`;
-    exportFile(html, `${slugify(title.value)}.html`, "text/html");
   });
 
   document.querySelector("#copy-event-entry").addEventListener("click", (event) => {
