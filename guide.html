@@ -99,16 +99,17 @@ int main(void) {
 
           <h2 id="publish">Publish</h2>
           <ol>
+            <li>Start the local helper server with <code>python server.py</code>.</li>
             <li>Write the post in <code>editor.html</code>.</li>
             <li>Fill <strong>Title</strong>, <strong>Date</strong>, <strong>Tags</strong>, and <strong>Event / CTF</strong>.</li>
             <li>Add files and images if needed.</li>
             <li>Set <strong>Homepage summary</strong> if the generated summary is not what you want. This text is only shown on the homepage card.</li>
             <li>Click <strong>Upload local</strong>.</li>
-            <li>Choose the project root folder, for example <code>D:\Cong Minh\Blog CTF</code>.</li>
+            <li>If the browser asks for a folder, choose the project root, for example <code>D:\Cong Minh\Blog CTF</code>.</li>
             <li>The editor writes the Markdown file, copies assets selected in this session, and updates <code>assets/js/posts.js</code>.</li>
             <li>Run <code>git add .</code>, <code>git commit</code>, and <code>git push</code>.</li>
           </ol>
-          <p>If <strong>Upload local</strong> is not available in your browser, use <strong>Export .md</strong>, copy assets manually, then copy the generated entries into <code>assets/js/posts.js</code>.</p>
+          <p>If <strong>Upload local</strong> says the browser cannot write to folders, stop the old server and run <code>python server.py</code>, then click <strong>Upload local</strong> again.</p>
           <p>To edit or delete an already published post, use the three-dot menu on the homepage post card or inside the post page. <strong>Edit</strong> opens the post in the editor. <strong>Delete</strong> removes it locally from <code>assets/js/posts.js</code> and deletes the Markdown file, then you still push the change with Git.</p>
 
           <h2 id="owner-mode">Owner Mode</h2>

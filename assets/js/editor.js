@@ -100,17 +100,26 @@ print("solve script goes here")
       tags: tags.value,
       event: eventName.value,
       homepageSummary: homepageSummary.value,
-      markdown: input.value
+      markdown: input.value,
+      assets: serializableAssets()
     };
   }
 
   function save() {
-    localStorage.setItem(storageKey, JSON.stringify(stateFromForm()));
-    saveState.textContent = "saved locally";
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(stateFromForm()));
+      saveState.textContent = "saved locally";
+    } catch {
+      const lightweightState = stateFromForm();
+      lightweightState.assets = [];
+      localStorage.setItem(storageKey, JSON.stringify(lightweightState));
+      saveState.textContent = "saved locally without image cache";
+    }
     updateSuggestedPath();
   }
 
   function render() {
+    syncAssetsWithMarkdown();
     preview.innerHTML = window.CTFRender.renderMarkdown(input.value, {
       basePath: `posts/${eventSlug()}/`,
       assetMap: assetPreviewMap
@@ -171,6 +180,7 @@ print("solve script goes here")
         eventName.value = data.event || "Hack The Box";
         homepageSummary.value = data.homepageSummary || "";
         input.value = data.markdown || defaultMarkdown;
+        await restoreSavedAssets(data.assets || []);
       } catch {
         setDefaults();
       }
@@ -404,14 +414,7 @@ print("solve script goes here")
     return `window.CTF_EVENTS = ${JSON.stringify(events, null, 2)};\n\nwindow.CTF_POSTS = ${JSON.stringify(posts, null, 2)};\n`;
   }
 
-  function assertLocalUploadSupport() {
-    if (!window.showDirectoryPicker) {
-      throw new Error("Local upload needs Chrome, Edge, or Brave on localhost. Use Export .md if your browser does not support folder write access.");
-    }
-  }
-
   async function pickProjectRoot() {
-    assertLocalUploadSupport();
     const root = await window.showDirectoryPicker({
       id: "ctf-writeups-project",
       mode: "readwrite"
@@ -471,20 +474,93 @@ print("solve script goes here")
 
   async function updatePostsIndex(root, postMode = "upsert", postSlug = "") {
     const assetsJs = await ensureDirectory(root, ["assets", "js"]);
-    const events = cloneEntries(window.CTF_EVENTS);
+    let events = cloneEntries(window.CTF_EVENTS);
     let posts = cloneEntries(window.CTF_POSTS);
 
     if (postMode === "delete") {
       posts = posts.filter((post) => post.slug !== postSlug);
     } else {
-      if (editingPost) {
-        posts = posts.filter((post) => post.slug !== editingPost.slug);
-      }
-      upsertBySlug(events, currentEventEntry());
-      upsertBySlug(posts, currentPostEntry());
+      ({ events, posts } = nextPublishedIndex());
     }
 
     await writeTextFile(assetsJs, "posts.js", formatPostsFile(events, posts));
+    window.CTF_EVENTS = events;
+    window.CTF_POSTS = posts;
+  }
+
+  function nextPublishedIndex() {
+    const events = cloneEntries(window.CTF_EVENTS);
+    let posts = cloneEntries(window.CTF_POSTS);
+    if (editingPost) {
+      posts = posts.filter((post) => post.slug !== editingPost.slug);
+    }
+    upsertBySlug(events, currentEventEntry());
+    upsertBySlug(posts, currentPostEntry());
+    return { events, posts };
+  }
+
+  async function blobToBase64(blob) {
+    const dataUrl = await fileToDataUrl(blob);
+    return dataUrl.split(",", 2)[1] || "";
+  }
+
+  async function serializeAssets(assets) {
+    const serialized = [];
+    for (const asset of assets) {
+      serialized.push({
+        folder: asset.folder,
+        filename: asset.filename,
+        contentBase64: await blobToBase64(asset.file)
+      });
+    }
+    return serialized;
+  }
+
+  async function uploadWithDirectoryPicker(root, markdown, assetsToUpload) {
+    const postDirectory = await ensureDirectory(root, ["posts", eventSlug()]);
+    await writeTextFile(postDirectory, writeupFilename(), markdown);
+
+    for (const asset of assetsToUpload) {
+      const assetDirectory = await ensureDirectory(root, ["posts", eventSlug(), asset.folder]);
+      await writeBlobFile(assetDirectory, asset.filename, asset.file);
+    }
+
+    await updatePostsIndex(root);
+    if (editingPost && editingPost.file !== postPath()) {
+      try {
+        await removeFile(root, editingPost.file);
+      } catch {
+        // The old Markdown path may already have been moved or deleted.
+      }
+    }
+  }
+
+  async function uploadWithLocalHelper(markdown, assetsToUpload) {
+    const { events, posts } = nextPublishedIndex();
+    const payload = {
+      eventSlug: eventSlug(),
+      writeupFilename: writeupFilename(),
+      markdown,
+      postsJs: formatPostsFile(events, posts),
+      oldFile: editingPost && editingPost.file !== postPath() ? editingPost.file : "",
+      assets: await serializeAssets(assetsToUpload)
+    };
+
+    let response;
+    try {
+      response = await fetch("/__upload-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch {
+      throw new Error("Brave is blocking direct folder write access. Keep this page open, stop the old server, run `python server.py`, then click Upload local again.");
+    }
+
+    if (!response.ok) {
+      throw new Error("This server cannot receive Upload local. Keep this page open, stop the old server, run `python server.py`, then click Upload local again.");
+    }
+
     window.CTF_EVENTS = events;
     window.CTF_POSTS = posts;
   }
@@ -499,23 +575,13 @@ print("solve script goes here")
     saveState.textContent = "uploading locally...";
 
     try {
-      const root = await pickProjectRoot();
-      const postDirectory = await ensureDirectory(root, ["posts", eventSlug()]);
+      const assetsToUpload = syncAssetsWithMarkdown();
       const markdown = `${frontMatter()}${window.CTFRender.stripFrontMatter(input.value)}`;
-      await writeTextFile(postDirectory, writeupFilename(), markdown);
-
-      for (const asset of attachedAssets) {
-        const assetDirectory = await ensureDirectory(root, ["posts", eventSlug(), asset.folder]);
-        await writeBlobFile(assetDirectory, asset.filename, asset.file);
-      }
-
-      await updatePostsIndex(root);
-      if (editingPost && editingPost.file !== postPath()) {
-        try {
-          await removeFile(root, editingPost.file);
-        } catch {
-          // The old Markdown path may already have been moved or deleted.
-        }
+      if (window.showDirectoryPicker) {
+        const root = await pickProjectRoot();
+        await uploadWithDirectoryPicker(root, markdown, assetsToUpload);
+      } else {
+        await uploadWithLocalHelper(markdown, assetsToUpload);
       }
       resetDraft("uploaded locally; draft reset");
       window.alert("Uploaded locally. Run git add, git commit, and git push to publish it to congminh8365.github.io.");
@@ -607,12 +673,83 @@ print("solve script goes here")
     if (existingIndex !== -1) {
       attachedAssets.splice(existingIndex, 1);
     }
-    attachedAssets.push({ file, folder, filename });
+    attachedAssets.push({ file, folder, filename, label: file.nameLabel || file.name || filename, dataUrl: file.dataUrl || "" });
   }
 
   function mapImagePreview(filename, dataUrl) {
     assetPreviewMap[`images/${filename}`] = dataUrl;
     assetPreviewMap[`posts/${eventSlug()}/images/${filename}`] = dataUrl;
+  }
+
+  function assetKey(folder, filename) {
+    return `${folder}/${filename}`;
+  }
+
+  function normalizeAssetPath(path) {
+    const cleanPath = String(path || "").trim().replace(/^\.?\//, "");
+    const match = cleanPath.match(/(?:^|\/)(images|files)\/([^)\s"'<>]+)/i);
+    if (!match) {
+      return "";
+    }
+    return assetKey(match[1].toLowerCase(), match[2]);
+  }
+
+  function referencedAssetKeys() {
+    const references = new Set();
+    const markdown = input.value;
+    const markdownLinks = /!?\[[^\]]*]\(([^)]+)\)/g;
+    const htmlAssets = /\b(?:src|href)=["']([^"']+)["']/gi;
+    let match;
+
+    while ((match = markdownLinks.exec(markdown))) {
+      const normalized = normalizeAssetPath(match[1]);
+      if (normalized) {
+        references.add(normalized);
+      }
+    }
+
+    while ((match = htmlAssets.exec(markdown))) {
+      const normalized = normalizeAssetPath(match[1]);
+      if (normalized) {
+        references.add(normalized);
+      }
+    }
+
+    return references;
+  }
+
+  function rebuildAssetList(assets) {
+    assetList.innerHTML = "";
+    assets.forEach((asset) => {
+      addAssetRow({ name: asset.label || asset.file.name || asset.filename }, asset.folder, asset.filename);
+    });
+  }
+
+  function syncAssetsWithMarkdown() {
+    const references = referencedAssetKeys();
+    const activeAssets = attachedAssets.filter((asset) => references.has(assetKey(asset.folder, asset.filename)));
+    attachedAssets.splice(0, attachedAssets.length, ...activeAssets);
+
+    Object.keys(assetPreviewMap).forEach((key) => {
+      const normalized = normalizeAssetPath(key);
+      if (normalized && !references.has(normalized)) {
+        delete assetPreviewMap[key];
+      }
+    });
+
+    rebuildAssetList(activeAssets);
+    return activeAssets;
+  }
+
+  function serializableAssets() {
+    return attachedAssets
+      .filter((asset) => asset.folder === "images" && asset.dataUrl)
+      .map((asset) => ({
+        folder: asset.folder,
+        filename: asset.filename,
+        label: asset.label || asset.filename,
+        dataUrl: asset.dataUrl
+      }));
   }
 
   function addAssetRow(file, folder, filename) {
@@ -624,8 +761,8 @@ print("solve script goes here")
   }
 
   function addAssetItem(file, folder, markdown, filename = safeFileName(file.name)) {
-    addAssetRow(file, folder, filename);
     insertBlock(markdown);
+    syncAssetsWithMarkdown();
   }
 
   async function attachAssets(files, folder) {
@@ -636,6 +773,7 @@ print("solve script goes here")
 
       if (folder === "images") {
         const dataUrl = await fileToDataUrl(file);
+        file.dataUrl = dataUrl;
         mapImagePreview(filename, dataUrl);
       }
 
@@ -664,9 +802,25 @@ print("solve script goes here")
   async function addPastedImage(dataUrl, alt = "pasted image") {
     const filename = nextPastedImageName(dataUrlType(dataUrl));
     const file = await dataUrlToFile(dataUrl, filename);
+    file.dataUrl = dataUrl;
+    file.nameLabel = alt || filename;
     rememberAttachedAsset(file, "images", filename);
     mapImagePreview(filename, dataUrl);
     addAssetItem({ name: alt || filename }, "images", `![${alt || "pasted image"}](images/${filename})\n`, filename);
+  }
+
+  async function restoreSavedAssets(assets) {
+    for (const asset of assets) {
+      if (!asset?.dataUrl || !asset?.filename || asset.folder !== "images") {
+        continue;
+      }
+
+      const file = await dataUrlToFile(asset.dataUrl, asset.filename);
+      file.dataUrl = asset.dataUrl;
+      file.nameLabel = asset.label || asset.filename;
+      rememberAttachedAsset(file, "images", asset.filename);
+      mapImagePreview(asset.filename, asset.dataUrl);
+    }
   }
 
   async function compactEmbeddedDataImages() {
@@ -682,9 +836,10 @@ print("solve script goes here")
       const dataUrl = match[2];
       const filename = nextPastedImageName(dataUrlType(dataUrl));
       const file = await dataUrlToFile(dataUrl, filename);
+      file.dataUrl = dataUrl;
+      file.nameLabel = alt;
       rememberAttachedAsset(file, "images", filename);
       mapImagePreview(filename, dataUrl);
-      addAssetRow({ name: alt }, "images", filename);
       nextMarkdown = nextMarkdown.replace(match[0], `![${alt}](images/${filename})`);
     }
 

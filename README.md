@@ -101,15 +101,21 @@ Autosave is only a draft cache, not a Git commit. Click `Upload local` when a wr
 
 ## Publish A Writeup
 
-1. Open `editor.html` locally.
-2. Fill `Title`, `Date`, `Tags`, and `Event / CTF`.
-3. Write the Markdown.
-4. Add assets with `Attach files` or `Insert images` if needed.
-5. Set `Homepage summary` if the generated summary is not what you want. This text is only shown on the homepage card.
-6. Click `Upload local`.
-7. Choose the project root folder, for example `D:\Cong Minh\Blog CTF`.
-8. The editor writes the Markdown file, copies current-session assets, and updates `assets/js/posts.js`.
-9. Commit and push:
+1. Start the local helper server:
+
+```powershell
+python server.py
+```
+
+2. Open `editor.html` locally.
+3. Fill `Title`, `Date`, `Tags`, and `Event / CTF`.
+4. Write the Markdown.
+5. Add assets with `Attach files` or `Insert images` if needed.
+6. Set `Homepage summary` if the generated summary is not what you want. This text is only shown on the homepage card.
+7. Click `Upload local`.
+8. If the browser asks for a folder, choose the project root, for example `D:\Cong Minh\Blog CTF`.
+9. The editor writes the Markdown file, copies current-session assets, and updates `assets/js/posts.js`.
+10. Commit and push:
 
 ```powershell
 git add .
@@ -119,7 +125,7 @@ git push
 
 GitHub Pages will redeploy automatically after the push.
 
-If `Upload local` is not available in your browser, use `Export .md`, copy assets manually, then paste the generated entries into `assets/js/posts.js`.
+If `Upload local` says the browser cannot write to folders, stop the old server and run `python server.py`, then click `Upload local` again.
 
 To edit or delete a published post locally, use the three-dot menu on the homepage post card or inside the post page. `Edit` opens the post in the editor. `Delete` removes it from `assets/js/posts.js` and deletes its Markdown file locally. After either action, commit and push.
 
@@ -175,7 +181,7 @@ This is only UI hiding. Real write access is still controlled by GitHub repo per
 
 ```powershell
 cd "D:\Công Minh\Blog CTF"
-python -m http.server 5500
+python server.py
 ```
 
 Open:
