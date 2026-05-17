@@ -22,6 +22,7 @@
   const assetPreviewMap = {};
   const attachedAssets = [];
   let editingPost = null;
+  let pastedImageCounter = 0;
 
   const defaultMarkdown = `# HTB - Challenge Name
 
@@ -177,9 +178,13 @@ print("solve script goes here")
       setDefaults();
     }
 
+    const compacted = await compactEmbeddedDataImages();
     render();
     save();
     updateCursor();
+    if (compacted) {
+      saveState.textContent = "compacted pasted images";
+    }
   }
 
   async function loadPublishedPost(post) {
@@ -203,10 +208,11 @@ print("solve script goes here")
       status = "could not load published markdown";
     }
 
+    const compacted = await compactEmbeddedDataImages();
     render();
     save();
     updateCursor();
-    saveState.textContent = status;
+    saveState.textContent = compacted ? "compacted pasted images" : status;
   }
 
   function setDefaults() {
@@ -562,12 +568,63 @@ print("solve script goes here")
     return `${safeBase}${ext.replace(/[^a-z0-9.]/g, "")}`;
   }
 
-  function addAssetItem(file, folder, markdown) {
+  function extensionForImageType(type) {
+    const normalized = String(type || "").toLowerCase();
+    const extensions = {
+      "image/jpeg": ".jpg",
+      "image/jpg": ".jpg",
+      "image/png": ".png",
+      "image/gif": ".gif",
+      "image/webp": ".webp",
+      "image/svg+xml": ".svg",
+      "image/bmp": ".bmp"
+    };
+    return extensions[normalized] || ".png";
+  }
+
+  function dataUrlType(dataUrl) {
+    return String(dataUrl).match(/^data:([^;,]+)/i)?.[1] || "image/png";
+  }
+
+  function compactTimestamp() {
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
+    return [
+      now.getFullYear(),
+      pad(now.getMonth() + 1),
+      pad(now.getDate())
+    ].join("") + "-" + [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
+  }
+
+  function nextPastedImageName(type = "image/png") {
+    pastedImageCounter += 1;
+    const suffix = pastedImageCounter > 1 ? `-${pastedImageCounter}` : "";
+    return `pasted-${compactTimestamp()}${suffix}${extensionForImageType(type)}`;
+  }
+
+  function rememberAttachedAsset(file, folder, filename) {
+    const existingIndex = attachedAssets.findIndex((asset) => asset.folder === folder && asset.filename === filename);
+    if (existingIndex !== -1) {
+      attachedAssets.splice(existingIndex, 1);
+    }
+    attachedAssets.push({ file, folder, filename });
+  }
+
+  function mapImagePreview(filename, dataUrl) {
+    assetPreviewMap[`images/${filename}`] = dataUrl;
+    assetPreviewMap[`posts/${eventSlug()}/images/${filename}`] = dataUrl;
+  }
+
+  function addAssetRow(file, folder, filename) {
     const item = document.createElement("li");
-    const path = `posts/${eventSlug()}/${folder}/${safeFileName(file.name)}`;
-    item.innerHTML = `<span>${file.name}</span><code>${path}</code>`;
+    const path = `posts/${eventSlug()}/${folder}/${filename}`;
+    item.innerHTML = `<span>${file.name || filename}</span><code>${path}</code>`;
     item.title = "Copy this file into the shown path before pushing to GitHub.";
     assetList.appendChild(item);
+  }
+
+  function addAssetItem(file, folder, markdown, filename = safeFileName(file.name)) {
+    addAssetRow(file, folder, filename);
     insertBlock(markdown);
   }
 
@@ -575,22 +632,17 @@ print("solve script goes here")
     for (const file of [...files]) {
       const filename = safeFileName(file.name);
       const label = file.name.replace(/\.[^.]+$/, "");
-      const existingIndex = attachedAssets.findIndex((asset) => asset.folder === folder && asset.filename === filename);
-      if (existingIndex !== -1) {
-        attachedAssets.splice(existingIndex, 1);
-      }
-      attachedAssets.push({ file, folder, filename });
+      rememberAttachedAsset(file, folder, filename);
 
       if (folder === "images") {
         const dataUrl = await fileToDataUrl(file);
-        assetPreviewMap[`images/${filename}`] = dataUrl;
-        assetPreviewMap[`posts/${eventSlug()}/images/${filename}`] = dataUrl;
+        mapImagePreview(filename, dataUrl);
       }
 
       const markdown = folder === "images"
         ? `![${label}](images/${filename})\n`
         : `- [${file.name}](files/${filename})\n`;
-      addAssetItem(file, folder, markdown);
+      addAssetItem(file, folder, markdown, filename);
     }
   }
 
@@ -601,6 +653,43 @@ print("solve script goes here")
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  async function dataUrlToFile(dataUrl, filename) {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type || dataUrlType(dataUrl) });
+  }
+
+  async function addPastedImage(dataUrl, alt = "pasted image") {
+    const filename = nextPastedImageName(dataUrlType(dataUrl));
+    const file = await dataUrlToFile(dataUrl, filename);
+    rememberAttachedAsset(file, "images", filename);
+    mapImagePreview(filename, dataUrl);
+    addAssetItem({ name: alt || filename }, "images", `![${alt || "pasted image"}](images/${filename})\n`, filename);
+  }
+
+  async function compactEmbeddedDataImages() {
+    const pattern = /!\[([^\]]*)\]\((data:image\/[^)]+)\)/gi;
+    const matches = [...input.value.matchAll(pattern)];
+    if (!matches.length) {
+      return false;
+    }
+
+    let nextMarkdown = input.value;
+    for (const match of matches) {
+      const alt = match[1] || "pasted image";
+      const dataUrl = match[2];
+      const filename = nextPastedImageName(dataUrlType(dataUrl));
+      const file = await dataUrlToFile(dataUrl, filename);
+      rememberAttachedAsset(file, "images", filename);
+      mapImagePreview(filename, dataUrl);
+      addAssetRow({ name: alt }, "images", filename);
+      nextMarkdown = nextMarkdown.replace(match[0], `![${alt}](images/${filename})`);
+    }
+
+    input.value = nextMarkdown;
+    return true;
   }
 
   function imageSrcFromHtml(html) {
@@ -690,7 +779,11 @@ print("solve script goes here")
     const htmlImage = imageSrcFromHtml(clipboard.getData("text/html"));
     if (htmlImage) {
       event.preventDefault();
-      insertBlock(`![pasted image](${htmlImage})\n`);
+      if (/^data:image\//i.test(htmlImage)) {
+        await addPastedImage(htmlImage);
+      } else {
+        insertBlock(`![pasted image](${htmlImage})\n`);
+      }
       return;
     }
 
@@ -702,7 +795,7 @@ print("solve script goes here")
     event.preventDefault();
     for (const file of imageFiles) {
       const dataUrl = await fileToDataUrl(file);
-      insertBlock(`![pasted image](${dataUrl})\n`);
+      await addPastedImage(dataUrl);
     }
   });
 
