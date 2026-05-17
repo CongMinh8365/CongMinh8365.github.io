@@ -277,6 +277,7 @@
     setPostsTitle("CTF Events");
     search.placeholder = "search CTF events";
     eventFilters.innerHTML = "";
+    eventFilters.className = "event-filter-row";
 
     function filteredGroups() {
       const term = search.value.trim().toLowerCase();
@@ -352,7 +353,8 @@
 
     pager.innerHTML = "";
     eventList.className = "event-list";
-    eventFilters.innerHTML = `<a class="back-link" href="index.html">← all CTFs</a>`;
+    eventFilters.innerHTML = "";
+    eventFilters.className = "event-filter-row event-detail-tools";
 
     if (!event) {
       setPostsTitle("CTF not found");
@@ -362,6 +364,12 @@
 
     setPostsTitle(event.name, "ctf");
     search.placeholder = "search challenges";
+
+    const backLink = document.createElement("a");
+    backLink.className = "back-link";
+    backLink.href = "index.html";
+    backLink.textContent = "< all CTFs";
+    eventFilters.append(backLink, createEventMenu(event));
 
     function draw() {
       const term = search.value.trim().toLowerCase();
@@ -380,32 +388,16 @@
       });
 
       eventList.innerHTML = "";
-      const section = document.createElement("section");
-      section.className = "event-card event-detail-card";
-      section.appendChild(createEventMenu(event));
-
-      const header = document.createElement("header");
-      header.className = "event-card-head";
-      header.innerHTML = `
-        <div>
-          <p class="folder-path">posts/${event.slug}/</p>
-          <h3>${event.name}</h3>
-          <p>${event.summary || "CTF writeups."}</p>
-        </div>
-        <span>${eventPosts.length} writeup${eventPosts.length > 1 ? "s" : ""}</span>
-      `;
-
       const list = document.createElement("ol");
-      list.className = "post-list";
+      list.className = "post-list event-post-list";
       visible.forEach((post) => list.appendChild(createPostCard(post)));
-      section.append(header, list);
-      eventList.appendChild(section);
+      eventList.appendChild(list);
 
       if (!visible.length) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
         empty.textContent = "No writeups found in this CTF.";
-        list.appendChild(empty);
+        eventList.appendChild(empty);
       }
     }
 

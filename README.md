@@ -69,7 +69,7 @@ The reader automatically resolves those paths when the post is shown on `post.ht
 
 Markdown files live directly inside the event folder. Assets are shared inside that event folder, so pasted screenshots use timestamped names to avoid collisions. For manually attached files, use descriptive names such as `phantom-channel-solve.py` if two writeups in the same event might use the same filename.
 
-The editor inserts these Markdown links. In Chrome, Edge, or Brave on localhost, `Upload local` also copies assets selected during the current editor session into the right local folders.
+The editor inserts these Markdown links. On localhost with `python server.py`, `Upload local` creates the event folder, creates `files/` and `images/`, writes the Markdown file, updates `assets/js/posts.js`, and copies current-session images into `images/`. Challenge files and solve scripts should be copied into `files/` manually.
 
 `Insert images` shows a local preview immediately from the selected image. The final public site still needs the image file to exist under `posts/<event-slug>/images/`.
 
@@ -114,12 +114,13 @@ python server.py
 2. Open `editor.html` locally.
 3. Fill `Title`, `Date`, `Tags`, and `Event / CTF`.
 4. Write the Markdown.
-5. Add assets with `Attach files` or `Insert images` if needed.
-6. Set `Homepage summary` if the generated summary is not what you want. This text is only shown on the homepage card.
+5. Add links with `Attach files` and screenshots with `Insert images` if needed.
+6. Set `Card summary` if the generated summary is not what you want. This text is shown on the writeup card.
 7. Click `Upload local`.
 8. If the browser asks for a folder, choose the project root, for example `D:\Cong Minh\Blog CTF`.
-9. The editor writes the Markdown file, copies current-session assets, and updates `assets/js/posts.js`.
-10. Commit and push:
+9. The editor writes the Markdown file, creates `files/` and `images/`, copies current-session images, and updates `assets/js/posts.js`.
+10. Copy real challenge files or solve scripts into `posts/<event-slug>/files/` manually if your writeup links to them.
+11. Commit and push:
 
 ```powershell
 git add .
@@ -131,7 +132,7 @@ GitHub Pages will redeploy automatically after the push.
 
 If `Upload local` says the browser cannot write to folders, stop the old server and run `python server.py`, then click `Upload local` again.
 
-To edit or delete a published post locally, use the three-dot menu on the homepage post card or inside the post page. `Edit` opens the post in the editor. `Delete` removes it from `assets/js/posts.js` and deletes its Markdown file locally. After either action, commit and push.
+To edit or delete locally, use the three-dot menu on an event card, on a writeup row inside an event page, or inside the post page. Event delete removes the whole `posts/<event-slug>/` folder. Post delete removes that post from `assets/js/posts.js` and deletes its Markdown file locally. After either action, commit and push.
 
 ## Deploy On GitHub Pages
 

@@ -305,7 +305,7 @@ print("solve script goes here")
   function updateSuggestedPath() {
     const eventFolder = eventSlug();
     suggestedPath.textContent = `suggested: posts/${eventFolder}/${writeupFilename()}`;
-    assetHint.textContent = `Upload local copies current-session assets into posts/${eventFolder}/files/ and posts/${eventFolder}/images/. Re-attach files after a browser reload.`;
+    assetHint.textContent = `Upload local creates posts/${eventFolder}/, exports the Markdown file, creates files/ and images/, and saves current-session images into images/. Copy challenge files into files/ manually before pushing.`;
   }
 
   function tagArray() {
@@ -518,9 +518,14 @@ print("solve script goes here")
 
   async function uploadWithDirectoryPicker(root, markdown, assetsToUpload) {
     const postDirectory = await ensureDirectory(root, ["posts", eventSlug()]);
+    await ensureDirectory(root, ["posts", eventSlug(), "files"]);
+    await ensureDirectory(root, ["posts", eventSlug(), "images"]);
     await writeTextFile(postDirectory, writeupFilename(), markdown);
 
     for (const asset of assetsToUpload) {
+      if (asset.folder !== "images") {
+        continue;
+      }
       const assetDirectory = await ensureDirectory(root, ["posts", eventSlug(), asset.folder]);
       await writeBlobFile(assetDirectory, asset.filename, asset.file);
     }
@@ -543,7 +548,7 @@ print("solve script goes here")
       markdown,
       postsJs: formatPostsFile(events, posts),
       oldFile: editingPost && editingPost.file !== postPath() ? editingPost.file : "",
-      assets: await serializeAssets(assetsToUpload)
+      assets: await serializeAssets(assetsToUpload.filter((asset) => asset.folder === "images"))
     };
 
     let response;
@@ -558,11 +563,16 @@ print("solve script goes here")
     }
 
     if (!response.ok) {
-      throw new Error("This server cannot receive Upload local. Keep this page open, stop the old server, run `python server.py`, then click Upload local again.");
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "This server cannot receive Upload local. Keep this page open, stop the old server, run `python server.py`, then click Upload local again.");
     }
 
     window.CTF_EVENTS = events;
     window.CTF_POSTS = posts;
+  }
+
+  function shouldTryLocalHelper() {
+    return ["127.0.0.1", "localhost"].includes(window.location.hostname);
   }
 
   async function uploadLocal() {
@@ -577,7 +587,17 @@ print("solve script goes here")
     try {
       const assetsToUpload = syncAssetsWithMarkdown();
       const markdown = `${frontMatter()}${window.CTFRender.stripFrontMatter(input.value)}`;
-      if (window.showDirectoryPicker) {
+      if (shouldTryLocalHelper()) {
+        try {
+          await uploadWithLocalHelper(markdown, assetsToUpload);
+        } catch (helperError) {
+          if (!window.showDirectoryPicker) {
+            throw helperError;
+          }
+          const root = await pickProjectRoot();
+          await uploadWithDirectoryPicker(root, markdown, assetsToUpload);
+        }
+      } else if (window.showDirectoryPicker) {
         const root = await pickProjectRoot();
         await uploadWithDirectoryPicker(root, markdown, assetsToUpload);
       } else {

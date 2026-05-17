@@ -56,7 +56,7 @@ Hack The Box   -> posts/hack-the-box/</code></pre>
 
           <h2 id="assets">Files and Images</h2>
           <p>Use <strong>Attach files</strong> for challenge files, solve scripts, archives, APKs, binaries, and other downloads. Use <strong>Insert images</strong> for screenshots.</p>
-          <p>The editor inserts Markdown links. If you use <strong>Upload local</strong> in Chrome, Edge, or Brave, the selected assets from the current editor session are also copied into these folders:</p>
+          <p>The editor inserts Markdown links. If you use <strong>Upload local</strong> with <code>python server.py</code>, it creates the event folder, creates <code>files/</code> and <code>images/</code>, exports the Markdown file, updates <code>assets/js/posts.js</code>, and copies current-session images into <code>images/</code>. Copy challenge files and solve scripts into <code>files/</code> manually.</p>
           <pre><code class="language-text">posts/&lt;event-slug&gt;/files/
 posts/&lt;event-slug&gt;/images/</code></pre>
           <p>Markdown examples:</p>
@@ -79,7 +79,7 @@ posts/&lt;event-slug&gt;/images/</code></pre>
             <li><strong>Preview</strong>: rendered Markdown only.</li>
             <li><strong>Import .md</strong>: open an existing Markdown file for editing.</li>
             <li><strong>Export .md</strong>: download the final Markdown file.</li>
-            <li><strong>Upload local</strong>: write the Markdown file, copied current-session assets, and <code>assets/js/posts.js</code> into your local project folder.</li>
+            <li><strong>Upload local</strong>: write the Markdown file, create <code>files/</code> and <code>images/</code>, copy current-session images, and update <code>assets/js/posts.js</code>.</li>
             <li><strong>New Write-up</strong>: clear the current autosaved draft and start from the template.</li>
           </ul>
 
@@ -105,14 +105,15 @@ int main(void) {
             <li>Write the post in <code>editor.html</code>.</li>
             <li>Fill <strong>Title</strong>, <strong>Date</strong>, <strong>Tags</strong>, and <strong>Event / CTF</strong>.</li>
             <li>Add files and images if needed.</li>
-            <li>Set <strong>Homepage summary</strong> if the generated summary is not what you want. This text is only shown on the homepage card.</li>
+            <li>Set <strong>Card summary</strong> if the generated summary is not what you want. This text is shown on the writeup card.</li>
             <li>Click <strong>Upload local</strong>.</li>
             <li>If the browser asks for a folder, choose the project root, for example <code>D:\Cong Minh\Blog CTF</code>.</li>
-            <li>The editor writes the Markdown file, copies assets selected in this session, and updates <code>assets/js/posts.js</code>.</li>
+            <li>The editor writes the Markdown file, creates <code>files/</code> and <code>images/</code>, copies images selected in this session, and updates <code>assets/js/posts.js</code>.</li>
+            <li>Copy real challenge files or solve scripts into <code>posts/&lt;event-slug&gt;/files/</code> manually if your writeup links to them.</li>
             <li>Run <code>git add .</code>, <code>git commit</code>, and <code>git push</code>.</li>
           </ol>
           <p>If <strong>Upload local</strong> says the browser cannot write to folders, stop the old server and run <code>python server.py</code>, then click <strong>Upload local</strong> again.</p>
-          <p>To edit or delete an already published post, use the three-dot menu on the homepage post card or inside the post page. <strong>Edit</strong> opens the post in the editor. <strong>Delete</strong> removes it locally from <code>assets/js/posts.js</code> and deletes the Markdown file, then you still push the change with Git.</p>
+          <p>To edit or delete locally, use the three-dot menu on an event card, on a writeup row inside an event page, or inside the post page. Event delete removes the whole event folder. Post delete removes it from <code>assets/js/posts.js</code> and deletes the Markdown file, then you still push the change with Git.</p>
 
           <h2 id="owner-mode">Owner Mode</h2>
           <p>Owner controls are visible automatically on <code>localhost</code> and <code>127.0.0.1</code>. Public visitors do not see <strong>Editor</strong>, <strong>Guide</strong>, or <strong>New writeup</strong>.</p>

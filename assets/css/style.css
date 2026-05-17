@@ -360,7 +360,7 @@ textarea:focus {
 }
 
 .event-overview-list {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .event-card {
@@ -377,7 +377,6 @@ textarea:focus {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  min-height: 100%;
   padding: 18px 52px 18px 18px;
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.025);
@@ -389,6 +388,7 @@ textarea:focus {
 
 .event-card-link {
   display: block;
+  flex: 1 1 auto;
   min-width: 0;
   color: inherit;
   text-decoration: none;
@@ -413,6 +413,41 @@ textarea:focus {
   flex: 0 0 auto;
   color: var(--dim);
   font-size: 0.82rem;
+}
+
+.event-overview-list .event-card-head {
+  padding-block: 15px;
+}
+
+.event-detail-tools {
+  align-items: center;
+  justify-content: space-between;
+  overflow: visible;
+  min-height: 38px;
+}
+
+.event-detail-tools .back-link {
+  margin-bottom: 0;
+}
+
+.event-detail-tools .post-menu {
+  position: relative;
+  top: auto;
+  right: auto;
+}
+
+.event-post-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(12, 12, 12, 0.58);
+}
+
+.event-post-list .post-card {
+  padding: 17px 44px 17px 18px;
+}
+
+.event-post-list .post-menu {
+  right: 12px;
 }
 
 .event-card .post-list {

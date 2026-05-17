@@ -86,6 +86,8 @@ class BlogHandler(SimpleHTTPRequestHandler):
 
         post_dir = safe_join("posts", event_slug)
         post_dir.mkdir(parents=True, exist_ok=True)
+        safe_join("posts", event_slug, "files").mkdir(parents=True, exist_ok=True)
+        safe_join("posts", event_slug, "images").mkdir(parents=True, exist_ok=True)
         safe_join("posts", event_slug, writeup_filename).write_text(markdown, encoding="utf-8", newline="\n")
 
         for asset in payload.get("assets", []):
