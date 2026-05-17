@@ -52,6 +52,7 @@
 TAMUctf 2026   -> posts/tamuctf-2026/
 Hack The Box   -> posts/hack-the-box/</code></pre>
           <p>You no longer need to type a separate folder slug.</p>
+          <p>The homepage shows CTF events first. Click one event to open a page containing that event's challenge writeups.</p>
 
           <h2 id="assets">Files and Images</h2>
           <p>Use <strong>Attach files</strong> for challenge files, solve scripts, archives, APKs, binaries, and other downloads. Use <strong>Insert images</strong> for screenshots.</p>
@@ -63,6 +64,7 @@ posts/&lt;event-slug&gt;/images/</code></pre>
 [solve script](files/solve.py)
 ![IDA screenshot](images/ida-main.png)</code></pre>
           <p><strong>Insert images</strong> shows a local preview immediately from the selected image. The final public site still needs the image file to exist under <code>posts/&lt;event-slug&gt;/images/</code>.</p>
+          <p>Markdown files live directly inside the event folder. Assets are shared inside that event folder. Pasted screenshots use timestamped names; manually attached files should use descriptive names if two writeups might otherwise use the same filename.</p>
           <p>If you close or reload the editor before uploading, re-attach the asset files or copy them manually. Browsers do not keep real file objects inside <code>localStorage</code>.</p>
           <p>You can also paste images into the editor. If the clipboard contains an image URL, the editor inserts that URL. If it contains raw image data, the editor inserts a data URL. Data URLs work, but they make the Markdown file large, so repository images are cleaner for final posts.</p>
 

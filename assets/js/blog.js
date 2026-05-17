@@ -1,15 +1,16 @@
 (function () {
-  const events = window.CTF_EVENTS || [];
-  const eventMap = new Map(events.map((event) => [event.slug, event]));
+  let events = window.CTF_EVENTS || [];
+  let eventMap = new Map(events.map((event) => [event.slug, event]));
+  let posts = visiblePosts(window.CTF_POSTS || []);
   const page = document.body.dataset.page;
+  const pageSize = 6;
   const fallbackEvent = {
     slug: "uncategorized",
     name: "Uncategorized",
     date: "",
     summary: "Writeups without an assigned CTF event."
   };
-  let posts = visiblePosts(window.CTF_POSTS || []);
-  let redrawHome = null;
+  let redrawCurrentView = null;
 
   function deletedSlugs() {
     try {
@@ -36,6 +37,14 @@
       .sort((a, b) => b.date.localeCompare(a.date));
   }
 
+  function applyIndex(nextEvents, nextPosts) {
+    window.CTF_EVENTS = nextEvents;
+    window.CTF_POSTS = nextPosts;
+    events = nextEvents;
+    eventMap = new Map(events.map((event) => [event.slug, event]));
+    posts = visiblePosts(nextPosts);
+  }
+
   function formatDate(value) {
     const [year, month, day] = value.split("-");
     return `${day}-${month}-${year}`;
@@ -56,13 +65,19 @@
     return eventMap.get(post.event) || fallbackEvent;
   }
 
-  function eventButton(event) {
-    const button = document.createElement("button");
-    button.className = "event-filter";
-    button.type = "button";
-    button.dataset.event = event.slug;
-    button.textContent = event.name;
-    return button;
+  function postsForEvent(eventSlug) {
+    return posts.filter((post) => post.event === eventSlug);
+  }
+
+  function eventGroups() {
+    return events
+      .map((event) => {
+        const eventPosts = postsForEvent(event.slug);
+        const latest = eventPosts[0]?.date || event.date || "";
+        return { event, posts: eventPosts, latest };
+      })
+      .filter((group) => group.posts.length)
+      .sort((a, b) => b.latest.localeCompare(a.latest));
   }
 
   function closePostMenus(except = null) {
@@ -73,35 +88,19 @@
     });
   }
 
-  function createPostMenu(post) {
+  function menuShell(label) {
     const menu = document.createElement("div");
     menu.className = "post-menu owner-control";
 
     const trigger = document.createElement("button");
     trigger.className = "post-menu-trigger";
     trigger.type = "button";
-    trigger.title = "Post actions";
-    trigger.setAttribute("aria-label", "Post actions");
+    trigger.title = label;
+    trigger.setAttribute("aria-label", label);
     trigger.innerHTML = "&#8942;";
 
     const list = document.createElement("div");
     list.className = "post-menu-list";
-
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "post-menu-item";
-    edit.textContent = "Edit";
-    edit.addEventListener("click", () => {
-      window.location.href = `editor.html?edit=${encodeURIComponent(post.slug)}`;
-    });
-
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "post-menu-item danger";
-    remove.textContent = "Delete";
-    remove.addEventListener("click", () => {
-      deletePublishedPost(post);
-    });
 
     trigger.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -111,8 +110,40 @@
     });
 
     list.addEventListener("click", (event) => event.stopPropagation());
-    list.append(edit, remove);
     menu.append(trigger, list);
+    return { menu, list };
+  }
+
+  function menuItem(label, danger = false) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = danger ? "post-menu-item danger" : "post-menu-item";
+    item.textContent = label;
+    return item;
+  }
+
+  function createPostMenu(post) {
+    const { menu, list } = menuShell("Post actions");
+    const edit = menuItem("Edit");
+    const remove = menuItem("Delete", true);
+
+    edit.addEventListener("click", () => {
+      window.location.href = `editor.html?edit=${encodeURIComponent(post.slug)}`;
+    });
+
+    remove.addEventListener("click", () => deletePublishedPost(post));
+    list.append(edit, remove);
+    return menu;
+  }
+
+  function createEventMenu(event) {
+    const { menu, list } = menuShell("CTF actions");
+    const edit = menuItem("Edit");
+    const remove = menuItem("Delete", true);
+
+    edit.addEventListener("click", () => editPublishedEvent(event));
+    remove.addEventListener("click", () => deletePublishedEvent(event));
+    list.append(edit, remove);
     return menu;
   }
 
@@ -144,126 +175,251 @@
     return item;
   }
 
+  function createEventCard(group) {
+    const section = document.createElement("section");
+    section.className = "event-card event-summary-card";
+    section.id = `event-${group.event.slug}`;
+
+    const link = document.createElement("a");
+    link.className = "event-card-link";
+    link.href = `index.html?event=${encodeURIComponent(group.event.slug)}`;
+    link.innerHTML = `
+      <p class="folder-path">posts/${group.event.slug}/</p>
+      <h3>${group.event.name}</h3>
+      <p>${group.event.summary || "CTF writeups."}</p>
+    `;
+
+    const count = document.createElement("span");
+    count.textContent = `${group.posts.length} writeup${group.posts.length > 1 ? "s" : ""}`;
+
+    const header = document.createElement("header");
+    header.className = "event-card-head";
+    header.append(link, count);
+    section.append(header, createEventMenu(group.event));
+    return section;
+  }
+
+  function drawTagFilters(filters, allTags, activeTag) {
+    filters.innerHTML = "";
+    const allButton = tagElement("all", true);
+    allButton.classList.toggle("is-active", activeTag === "all");
+    filters.appendChild(allButton);
+
+    allTags.forEach((tag) => {
+      const button = tagElement(tag, true);
+      button.classList.toggle("is-active", activeTag === tag);
+      filters.appendChild(button);
+    });
+  }
+
+  function renderPagination(target, totalPages, currentPage, onPageChange) {
+    target.innerHTML = "";
+    if (totalPages <= 1) {
+      return;
+    }
+
+    const wrap = document.createElement("nav");
+    wrap.className = "pager";
+    wrap.setAttribute("aria-label", "CTF pages");
+
+    const previous = document.createElement("button");
+    previous.type = "button";
+    previous.textContent = "<";
+    previous.disabled = currentPage === 1;
+    previous.addEventListener("click", () => onPageChange(currentPage - 1));
+    wrap.appendChild(previous);
+
+    for (let index = 1; index <= totalPages; index += 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = String(index);
+      button.classList.toggle("is-active", index === currentPage);
+      button.addEventListener("click", () => onPageChange(index));
+      wrap.appendChild(button);
+    }
+
+    const next = document.createElement("button");
+    next.type = "button";
+    next.textContent = ">";
+    next.disabled = currentPage === totalPages;
+    next.addEventListener("click", () => onPageChange(currentPage + 1));
+    wrap.appendChild(next);
+    target.appendChild(wrap);
+  }
+
+  function paginationHost() {
+    let host = document.querySelector("#event-pagination");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "event-pagination";
+      document.querySelector("#event-list").after(host);
+    }
+    return host;
+  }
+
+  function setPostsTitle(title, kicker = "published") {
+    document.querySelector("#posts-title").textContent = title;
+    const sectionKicker = document.querySelector(".posts-workspace .terminal-kicker");
+    if (sectionKicker) {
+      sectionKicker.textContent = kicker;
+    }
+  }
+
   function renderHome() {
     const eventList = document.querySelector("#event-list");
     const search = document.querySelector("#post-search");
     const filters = document.querySelector("#tag-filters");
     const eventFilters = document.querySelector("#event-filters");
+    const pager = paginationHost();
     let activeTag = "all";
-    let activeEvent = "all";
+    let currentPage = 1;
 
-    function drawFilters() {
-      const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort();
-      const visibleEvents = events.filter((event) => posts.some((post) => post.event === event.slug));
+    setPostsTitle("CTF Events");
+    search.placeholder = "search CTF events";
+    eventFilters.innerHTML = "";
 
-      if (activeTag !== "all" && !allTags.includes(activeTag)) {
-        activeTag = "all";
-      }
-
-      if (activeEvent !== "all" && !visibleEvents.some((event) => event.slug === activeEvent)) {
-        activeEvent = "all";
-      }
-
-      filters.innerHTML = "";
-      const allButton = tagElement("all", true);
-      allButton.classList.toggle("is-active", activeTag === "all");
-      filters.appendChild(allButton);
-      allTags.forEach((tag) => {
-        const button = tagElement(tag, true);
-        button.classList.toggle("is-active", activeTag === tag);
-        filters.appendChild(button);
+    function filteredGroups() {
+      const term = search.value.trim().toLowerCase();
+      return eventGroups().filter((group) => {
+        const haystack = [
+          group.event.name,
+          group.event.summary,
+          group.event.slug,
+          ...group.posts.flatMap((post) => [post.title, post.summary, ...post.tags])
+        ].join(" ").toLowerCase();
+        const matchesText = !term || haystack.includes(term);
+        const matchesTag = activeTag === "all" || group.posts.some((post) => post.tags.includes(activeTag));
+        return matchesText && matchesTag;
       });
-
-      eventFilters.innerHTML = "";
-      const allEventsButton = eventButton({ slug: "all", name: "All CTFs" });
-      allEventsButton.classList.toggle("is-active", activeEvent === "all");
-      eventFilters.appendChild(allEventsButton);
-      visibleEvents.forEach((event) => {
-        const button = eventButton(event);
-        button.classList.toggle("is-active", activeEvent === event.slug);
-        eventFilters.appendChild(button);
-      });
-
     }
 
     function draw() {
-      drawFilters();
-      const term = search.value.trim().toLowerCase();
-      const visible = posts.filter((post) => {
-        const event = eventForPost(post);
-        const haystack = [post.title, post.summary, post.date, event.name, event.slug, ...post.tags].join(" ").toLowerCase();
-        const matchesText = !term || haystack.includes(term);
-        const matchesTag = activeTag === "all" || post.tags.includes(activeTag);
-        const matchesEvent = activeEvent === "all" || post.event === activeEvent;
-        return matchesText && matchesTag && matchesEvent;
-      });
+      const groups = filteredGroups();
+      const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort();
+      if (activeTag !== "all" && !allTags.includes(activeTag)) {
+        activeTag = "all";
+      }
+      drawTagFilters(filters, allTags, activeTag);
 
+      const totalPages = Math.max(1, Math.ceil(groups.length / pageSize));
+      currentPage = Math.min(currentPage, totalPages);
+      const pageGroups = groups.slice((currentPage - 1) * pageSize, currentPage * pageSize);
       eventList.innerHTML = "";
+      eventList.className = "event-list event-overview-list";
 
-      if (!visible.length) {
+      if (!pageGroups.length) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
-        empty.textContent = "No writeups found.";
+        empty.textContent = "No CTF events found.";
         eventList.appendChild(empty);
-        return;
+      } else {
+        pageGroups.forEach((group) => eventList.appendChild(createEventCard(group)));
       }
 
-      const grouped = new Map();
-      visible.forEach((post) => {
-        const event = eventForPost(post);
-        if (!grouped.has(event.slug)) {
-          grouped.set(event.slug, { event, posts: [] });
-        }
-        grouped.get(event.slug).posts.push(post);
-      });
-
-      grouped.forEach((group) => {
-        const section = document.createElement("section");
-        section.className = "event-card";
-        section.id = `event-${group.event.slug}`;
-
-        const header = document.createElement("header");
-        header.className = "event-card-head";
-        header.innerHTML = `
-          <div>
-            <p class="folder-path">posts/${group.event.slug}/</p>
-            <h3>${group.event.name}</h3>
-            <p>${group.event.summary}</p>
-          </div>
-          <span>${group.posts.length} writeup${group.posts.length > 1 ? "s" : ""}</span>
-        `;
-
-        const list = document.createElement("ol");
-        list.className = "post-list";
-        group.posts.forEach((post) => list.appendChild(createPostCard(post)));
-
-        section.append(header, list);
-        eventList.appendChild(section);
+      renderPagination(pager, totalPages, currentPage, (pageNumber) => {
+        currentPage = pageNumber;
+        draw();
       });
     }
-
-    eventFilters.addEventListener("click", (event) => {
-      const button = event.target.closest(".event-filter");
-      if (!button) {
-        return;
-      }
-
-      activeEvent = button.dataset.event;
-      draw();
-    });
 
     filters.addEventListener("click", (event) => {
       const button = event.target.closest(".tag-button");
       if (!button) {
         return;
       }
+      activeTag = button.dataset.tag;
+      currentPage = 1;
+      draw();
+    });
 
+    search.addEventListener("input", () => {
+      currentPage = 1;
+      draw();
+    });
+
+    redrawCurrentView = draw;
+    draw();
+  }
+
+  function renderEventDetail(eventSlug) {
+    const eventList = document.querySelector("#event-list");
+    const search = document.querySelector("#post-search");
+    const filters = document.querySelector("#tag-filters");
+    const eventFilters = document.querySelector("#event-filters");
+    const pager = paginationHost();
+    const event = eventMap.get(eventSlug);
+    let activeTag = "all";
+
+    pager.innerHTML = "";
+    eventList.className = "event-list";
+    eventFilters.innerHTML = `<a class="back-link" href="index.html">← all CTFs</a>`;
+
+    if (!event) {
+      setPostsTitle("CTF not found");
+      eventList.innerHTML = "<p class=\"empty-state\">No CTF event is configured for this URL.</p>";
+      return;
+    }
+
+    setPostsTitle(event.name, "ctf");
+    search.placeholder = "search challenges";
+
+    function draw() {
+      const term = search.value.trim().toLowerCase();
+      const eventPosts = postsForEvent(event.slug);
+      const allTags = [...new Set(eventPosts.flatMap((post) => post.tags))].sort();
+      if (activeTag !== "all" && !allTags.includes(activeTag)) {
+        activeTag = "all";
+      }
+      drawTagFilters(filters, allTags, activeTag);
+
+      const visible = eventPosts.filter((post) => {
+        const haystack = [post.title, post.summary, post.date, ...post.tags].join(" ").toLowerCase();
+        const matchesText = !term || haystack.includes(term);
+        const matchesTag = activeTag === "all" || post.tags.includes(activeTag);
+        return matchesText && matchesTag;
+      });
+
+      eventList.innerHTML = "";
+      const section = document.createElement("section");
+      section.className = "event-card event-detail-card";
+      section.appendChild(createEventMenu(event));
+
+      const header = document.createElement("header");
+      header.className = "event-card-head";
+      header.innerHTML = `
+        <div>
+          <p class="folder-path">posts/${event.slug}/</p>
+          <h3>${event.name}</h3>
+          <p>${event.summary || "CTF writeups."}</p>
+        </div>
+        <span>${eventPosts.length} writeup${eventPosts.length > 1 ? "s" : ""}</span>
+      `;
+
+      const list = document.createElement("ol");
+      list.className = "post-list";
+      visible.forEach((post) => list.appendChild(createPostCard(post)));
+      section.append(header, list);
+      eventList.appendChild(section);
+
+      if (!visible.length) {
+        const empty = document.createElement("p");
+        empty.className = "empty-state";
+        empty.textContent = "No writeups found in this CTF.";
+        list.appendChild(empty);
+      }
+    }
+
+    filters.addEventListener("click", (event) => {
+      const button = event.target.closest(".tag-button");
+      if (!button) {
+        return;
+      }
       activeTag = button.dataset.tag;
       draw();
     });
 
     search.addEventListener("input", draw);
-    redrawHome = draw;
+    redrawCurrentView = draw;
     draw();
   }
 
@@ -317,14 +473,7 @@
     }
   }
 
-  function assertLocalWriteSupport() {
-    if (!window.showDirectoryPicker) {
-      throw new Error("Delete needs Chrome, Edge, or Brave with local folder write access.");
-    }
-  }
-
   async function pickProjectRoot() {
-    assertLocalWriteSupport();
     const root = await window.showDirectoryPicker({
       id: "ctf-writeups-project",
       mode: "readwrite"
@@ -375,6 +524,18 @@
     return true;
   }
 
+  async function removeDirectory(root, relativePath) {
+    const parts = String(relativePath || "").split("/").filter(Boolean);
+    const dirname = parts.pop();
+    if (!dirname) {
+      return false;
+    }
+
+    const directory = await getDirectory(root, parts);
+    await directory.removeEntry(dirname, { recursive: true });
+    return true;
+  }
+
   function cloneEntries(value) {
     return JSON.parse(JSON.stringify(Array.isArray(value) ? value : []));
   }
@@ -383,12 +544,50 @@
     return `window.CTF_EVENTS = ${JSON.stringify(nextEvents, null, 2)};\n\nwindow.CTF_POSTS = ${JSON.stringify(nextPosts, null, 2)};\n`;
   }
 
-  async function removePostFromIndex(root, postSlug) {
-    const assetsJs = await ensureDirectory(root, ["assets", "js"]);
-    const nextEvents = cloneEntries(window.CTF_EVENTS);
-    const nextPosts = cloneEntries(window.CTF_POSTS).filter((post) => post.slug !== postSlug);
-    await writeTextFile(assetsJs, "posts.js", formatPostsFile(nextEvents, nextPosts));
-    window.CTF_POSTS = nextPosts;
+  async function writeIndex(nextEvents, nextPosts, options = {}) {
+    const postsJs = formatPostsFile(nextEvents, nextPosts);
+    if (window.showDirectoryPicker) {
+      const root = await pickProjectRoot();
+      const assetsJs = await ensureDirectory(root, ["assets", "js"]);
+      await writeTextFile(assetsJs, "posts.js", postsJs);
+
+      for (const file of options.deleteFiles || []) {
+        try {
+          await removeFile(root, file);
+        } catch {
+          // File may already be gone.
+        }
+      }
+
+      for (const directory of options.deleteDirs || []) {
+        try {
+          await removeDirectory(root, directory);
+        } catch {
+          // Directory may already be gone.
+        }
+      }
+    } else {
+      let response;
+      try {
+        response = await fetch("/__write-index", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postsJs,
+            deleteFiles: options.deleteFiles || [],
+            deleteDirs: options.deleteDirs || []
+          })
+        });
+      } catch {
+        throw new Error("Run `python server.py` before using Edit or Delete.");
+      }
+
+      if (!response.ok) {
+        throw new Error("This local server cannot edit files. Stop it, run `python server.py`, then try again.");
+      }
+    }
+
+    applyIndex(nextEvents, nextPosts);
   }
 
   function showDeletedPost(post, removedMarkdown) {
@@ -410,29 +609,80 @@
     }
 
     try {
-      const root = await pickProjectRoot();
-      await removePostFromIndex(root, post.slug);
-
-      let removedMarkdown = false;
-      try {
-        removedMarkdown = await removeFile(root, post.file);
-      } catch {
-        removedMarkdown = false;
-      }
-
+      const nextEvents = cloneEntries(window.CTF_EVENTS);
+      const nextPosts = cloneEntries(window.CTF_POSTS).filter((item) => item.slug !== post.slug);
+      await writeIndex(nextEvents, nextPosts, { deleteFiles: [post.file] });
       rememberDeletedSlug(post.slug);
-      posts = posts.filter((item) => item.slug !== post.slug);
-
-      if (page === "home" && redrawHome) {
-        redrawHome();
-      }
 
       if (page === "post") {
-        showDeletedPost(post, removedMarkdown);
+        showDeletedPost(post, true);
+      } else if (redrawCurrentView) {
+        redrawCurrentView();
       }
 
-      const markdownStatus = removedMarkdown ? "Markdown file deleted." : "Post index updated, but the Markdown file was not found.";
-      window.alert(`${markdownStatus} Run git add, git commit, and git push to update the public site.`);
+      window.alert("Post deleted locally. Run git add, git commit, and git push to update the public site.");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return;
+      }
+      window.alert(error.message || "Delete failed.");
+    }
+  }
+
+  async function editPublishedEvent(event) {
+    closePostMenus();
+    const name = window.prompt("CTF name", event.name);
+    if (!name) {
+      return;
+    }
+    const summary = window.prompt("CTF summary", event.summary || `${name} writeups.`);
+    if (summary === null) {
+      return;
+    }
+
+    try {
+      const nextEvents = cloneEntries(window.CTF_EVENTS).map((item) => {
+        if (item.slug !== event.slug) {
+          return item;
+        }
+        return { ...item, name: name.trim(), summary: summary.trim() || `${name.trim()} writeups.` };
+      });
+      const nextPosts = cloneEntries(window.CTF_POSTS);
+      await writeIndex(nextEvents, nextPosts);
+      if (redrawCurrentView) {
+        redrawCurrentView();
+      }
+      window.alert("CTF updated locally. Run git add, git commit, and git push to update the public site.");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return;
+      }
+      window.alert(error.message || "Edit failed.");
+    }
+  }
+
+  async function deletePublishedEvent(event) {
+    closePostMenus();
+    const eventPosts = postsForEvent(event.slug);
+    const confirmed = window.confirm(`Delete the whole CTF "${event.name}" locally, including ${eventPosts.length} writeup(s) and the folder posts/${event.slug}/?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const nextEvents = cloneEntries(window.CTF_EVENTS).filter((item) => item.slug !== event.slug);
+      const nextPosts = cloneEntries(window.CTF_POSTS).filter((post) => post.event !== event.slug);
+      await writeIndex(nextEvents, nextPosts, { deleteDirs: [`posts/${event.slug}`] });
+
+      if (new URLSearchParams(window.location.search).get("event") === event.slug) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      if (redrawCurrentView) {
+        redrawCurrentView();
+      }
+      window.alert("CTF deleted locally. Run git add, git commit, and git push to update the public site.");
     } catch (error) {
       if (error.name === "AbortError") {
         return;
@@ -444,7 +694,12 @@
   document.addEventListener("click", () => closePostMenus());
 
   if (page === "home") {
-    renderHome();
+    const eventSlug = new URLSearchParams(window.location.search).get("event");
+    if (eventSlug) {
+      renderEventDetail(eventSlug);
+    } else {
+      renderHome();
+    }
   }
 
   if (page === "post") {

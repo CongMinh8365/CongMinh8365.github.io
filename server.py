@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+import shutil
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -44,13 +45,16 @@ class BlogHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
-        if path != "/__upload-local":
+        if path not in {"/__upload-local", "/__write-index"}:
             self.send_error(404, "Unknown endpoint")
             return
 
         try:
             payload = self.read_json()
-            self.handle_upload(payload)
+            if path == "/__upload-local":
+                self.handle_upload(payload)
+            else:
+                self.handle_write_index(payload)
             self.write_json({"ok": True})
         except Exception as exc:  # noqa: BLE001 - return the exact local helper error.
             self.send_response(400)
@@ -100,6 +104,23 @@ class BlogHandler(SimpleHTTPRequestHandler):
             old_path = safe_join(*old_file.split("/"))
             if old_path.exists() and old_path.is_file():
                 old_path.unlink()
+
+        safe_join("assets", "js", "posts.js").write_text(posts_js, encoding="utf-8", newline="\n")
+
+    def handle_write_index(self, payload: dict) -> None:
+        posts_js = payload.get("postsJs", "")
+        if not isinstance(posts_js, str):
+            raise ValueError("Invalid posts.js content")
+
+        for relative in payload.get("deleteFiles", []):
+            target = safe_join(*str(relative).split("/"))
+            if target.exists() and target.is_file():
+                target.unlink()
+
+        for relative in payload.get("deleteDirs", []):
+            target = safe_join(*str(relative).split("/"))
+            if target.exists() and target.is_dir():
+                shutil.rmtree(target)
 
         safe_join("assets", "js", "posts.js").write_text(posts_js, encoding="utf-8", newline="\n")
 

@@ -46,6 +46,8 @@ Hack The Box        -> posts/hack-the-box/
 
 You no longer need to type `Folder slug`. The editor generates it automatically from `Event / CTF`.
 
+The homepage shows CTF events first. Click an event to open its writeup list. Each event page then shows the challenge writeups for that event.
+
 ## Assets
 
 For each event folder, use:
@@ -64,6 +66,8 @@ In Markdown:
 ```
 
 The reader automatically resolves those paths when the post is shown on `post.html`.
+
+Markdown files live directly inside the event folder. Assets are shared inside that event folder, so pasted screenshots use timestamped names to avoid collisions. For manually attached files, use descriptive names such as `phantom-channel-solve.py` if two writeups in the same event might use the same filename.
 
 The editor inserts these Markdown links. In Chrome, Edge, or Brave on localhost, `Upload local` also copies assets selected during the current editor session into the right local folders.
 
