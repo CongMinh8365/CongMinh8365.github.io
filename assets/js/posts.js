@@ -71,5 +71,16 @@ window.CTF_POSTS = [
     ],
     "summary": "Write-up for challenge Phantom Channel",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-17-phantom-channel.md"
+  },
+  {
+    "slug": "shadow-ledger",
+    "title": "Shadow Ledger",
+    "date": "2026-05-18",
+    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
+    "tags": [
+      "reverse"
+    ],
+    "summary": "Một bài khá dễ",
+    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-18-shadow-ledger.md"
   }
 ];
