@@ -15,17 +15,6 @@ window.CTF_EVENTS = [
 
 window.CTF_POSTS = [
   {
-    "slug": "shadow-ledger",
-    "title": "Shadow Ledger",
-    "date": "2026-05-18",
-    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
-    "tags": [
-      "reverse"
-    ],
-    "summary": "A chill chall",
-    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-18-shadow-ledger.md"
-  },
-  {
     "slug": "batcave-bitflips",
     "title": "Batcave Bitflips",
     "date": "2026-04-12",
@@ -37,6 +26,17 @@ window.CTF_POSTS = [
     "file": "posts/umass-ctf-2026/2026-04-12-batcave-bitflips.md"
   },
   {
+    "slug": "shadow-ledger",
+    "title": "Shadow Ledger",
+    "date": "2026-05-18",
+    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
+    "tags": [
+      "reverse"
+    ],
+    "summary": "Really \"very easy\" challenge",
+    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-18-shadow-ledger.md"
+  },
+  {
     "slug": "phantom-channel",
     "title": "Phantom Channel",
     "date": "2026-05-17",
@@ -44,7 +44,7 @@ window.CTF_POSTS = [
     "tags": [
       "reverse"
     ],
-    "summary": "Don't be tricked when u see \"very easy\"",
+    "summary": "Don't be so happy when u see \"very easy\"",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-17-phantom-channel.md"
   }
 ];
