@@ -2,7 +2,7 @@
 title: Batcave Bitflips
 date: 2026-04-12
 event: UMass CTF 2026
-tags: Reverse
+tags: reverse
 ---
 
 # Batcave Bitflips
