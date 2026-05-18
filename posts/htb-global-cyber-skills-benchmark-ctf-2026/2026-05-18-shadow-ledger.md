@@ -22,7 +22,7 @@ Trước tiên kiểm tra bằng `strings`:
 
 Hiện ra flag luôn =)))
 
-Nhưng thôi thử tìm hiểu logic hoạt động của chall này là gì.
+Nhưng thôi thử tìm hiểu logic hoạt động của chall này là gì
 
 ## Đào sâu bằng IDA
 Mở file bằng IDA, ta thấy đoạn code `main` như sau:
@@ -42,7 +42,7 @@ if ( (unsigned int)__isoc99_sscanf(a2[1], &unk_4021BC, &v4) == 1 )
 
 ![pasted image](images/pasted-20260518-134913-3.png)
 
-Nhưng để ý một chút, đây là truyền tham trị, mà giá trị trả về của hàm này ko đc gán cho biến nào cả, do đó `v4` thay đổi giá trị bên trong thì bên ngoài ko ảnh hưởng gì cả, vẫn sẽ giữ giá trị 0
+Nhưng để ý một chút, đây là truyền tham trị, mà giá trị trả về của hàm này ko đc gán cho biến nào cả, do đó `v4` thay đổi bên trong hàm thì bên ngoài vẫn sẽ bằng 0
 
 Tiếp theo là đoạn code so sánh từng kí tự:
 

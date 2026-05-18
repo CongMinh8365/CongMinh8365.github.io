@@ -80,7 +80,7 @@ window.CTF_POSTS = [
     "tags": [
       "reverse"
     ],
-    "summary": "Một bài khá dễ",
+    "summary": "A chill chall",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-18-shadow-ledger.md"
   }
 ];
