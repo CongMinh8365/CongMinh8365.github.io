@@ -62,17 +62,6 @@ window.CTF_POSTS = [
     "file": "posts/umass-ctf-2026/2026-04-12-batcave-bitflips.md"
   },
   {
-    "slug": "phantom-channel",
-    "title": "Phantom Channel",
-    "date": "2026-05-17",
-    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
-    "tags": [
-      "reverse"
-    ],
-    "summary": "Write-up for challenge Phantom Channel",
-    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-17-phantom-channel.md"
-  },
-  {
     "slug": "shadow-ledger",
     "title": "Shadow Ledger",
     "date": "2026-05-18",
@@ -82,5 +71,16 @@ window.CTF_POSTS = [
     ],
     "summary": "A chill chall",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-18-shadow-ledger.md"
+  },
+  {
+    "slug": "phantom-channel",
+    "title": "Phantom Channel",
+    "date": "2026-05-17",
+    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
+    "tags": [
+      "reverse"
+    ],
+    "summary": "Don't be tricked",
+    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-17-phantom-channel.md"
   }
 ];
