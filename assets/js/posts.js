@@ -46,5 +46,16 @@ window.CTF_POSTS = [
     ],
     "summary": "Don't be so happy when u see \"very easy\"",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-17-phantom-channel.md"
+  },
+  {
+    "slug": "lego-clicker",
+    "title": "Lego Clicker",
+    "date": "2026-04-13",
+    "event": "umass-ctf-2026",
+    "tags": [
+      "reverse"
+    ],
+    "summary": "Nice mobile challenge",
+    "file": "posts/umass-ctf-2026/2026-04-13-lego-clicker.md"
   }
 ];
