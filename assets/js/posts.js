@@ -57,5 +57,16 @@ window.CTF_POSTS = [
     ],
     "summary": "Nice mobile challenge",
     "file": "posts/umass-ctf-2026/2026-04-13-lego-clicker.md"
+  },
+  {
+    "slug": "dudsat",
+    "title": "Dudsat",
+    "date": "2026-05-19",
+    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
+    "tags": [
+      "reverse"
+    ],
+    "summary": "Hidden bytes inside Assembly",
+    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-19-dudsat.md"
   }
 ];
