@@ -79,7 +79,7 @@ window.CTF_POSTS = [
       "crypto",
       "mobile"
     ],
-    "summary": "Reverse + Crypto, not juat Reverse",
+    "summary": "Reverse + Crypto, not just Reverse",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-21-nocteye.md"
   }
 ];
