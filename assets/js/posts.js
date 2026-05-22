@@ -68,5 +68,18 @@ window.CTF_POSTS = [
     ],
     "summary": "Hidden bytes inside Assembly",
     "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-19-dudsat.md"
+  },
+  {
+    "slug": "nocteye",
+    "title": "Nocteye",
+    "date": "2026-05-21",
+    "event": "htb-global-cyber-skills-benchmark-ctf-2026",
+    "tags": [
+      "reverse",
+      "crypto",
+      "mobile"
+    ],
+    "summary": "Reverse + Crypto, not juat Reverse",
+    "file": "posts/htb-global-cyber-skills-benchmark-ctf-2026/2026-05-21-nocteye.md"
   }
 ];
